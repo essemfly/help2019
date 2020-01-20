@@ -20,7 +20,7 @@ def train(env):
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
 
     for person_id in person_ids:
-        df, _ = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+        df = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
         df.to_csv(cfg.VOLUME_DIR + "/" + str(person_id) + "_measurement.csv")
 
     # FOR TEST IN TENSORBOARD

@@ -89,17 +89,17 @@ def resample(measure_df, outcome_df, subject_id, unit_min=1, impute_strategy='na
             new_row_time = datetime_to_string(roundTime(string_to_datetime(row_time)))
 
     # dataframe for label data
-    df_label = pd.DataFrame(index=index_list, columns=['LABEL'])
-    df_label = df_label.fillna(float('nan'))
-    sub_df = outcome_df[outcome_df['SUBJECT_ID'] == subject_id]
-    for _, row in sub_df.iterrows():
-        row_time = row["COHORT_END_DATE"]
-        df_label.loc[row_time]['LABEL'] = int(row["LABEL"])
-    cur_label = 0  # 0: There is no critical event.
-    for index, row in df_label.iterrows():
-        row_label = row["LABEL"]
-        if isNaN(row_label):
-            row["LABEL"] = cur_label
-        else:
-            cur_label = int(row_label)
-    return df, df_label
+    # df_label = pd.DataFrame(index=index_list, columns=['LABEL'])
+    # df_label = df_label.fillna(float('nan'))
+    # sub_df = outcome_df[outcome_df['SUBJECT_ID'] == subject_id]
+    # for _, row in sub_df.iterrows():
+    #     row_time = row["COHORT_END_DATE"]
+    #     df_label.loc[row_time]['LABEL'] = int(row["LABEL"])
+    # cur_label = 0  # 0: There is no critical event.
+    # for index, row in df_label.iterrows():
+    #     row_label = row["LABEL"]
+    #     if isNaN(row_label):
+    #         row["LABEL"] = cur_label
+    #     else:
+    #         cur_label = int(row_label)
+    return df
