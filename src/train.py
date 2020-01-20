@@ -21,10 +21,10 @@ def train(env):
 
     for person_id in person_ids:
         df, _ = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
-        df.to_csv(str(person_id) + "_measurement.csv")
+        df.to_csv(cfg.VOLUME_DIR + "/" + str(person_id) + "_measurement.csv")
 
     # FOR TEST IN TENSORBOARD
-    person_id = person_ids[7]
+    person_id = person_ids[0]
     df = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
     idx = 0
     for index, row in df.iterrows():
