@@ -7,6 +7,6 @@ class LocalConfig:
 
 class ProdConfig:
     env = 'localhost'
-    TRAIN_DIR = 'data/train'
-    VOLUME_DIR = 'data/volume'
-    LOG_DIR = 'data/volume/logs'
+    TRAIN_DIR = '/data/train'
+    VOLUME_DIR = '/data/volume'
+    LOG_DIR = '/data/volume/logs'

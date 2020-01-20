@@ -16,8 +16,8 @@ def train(env):
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
     person_ids = get_person_ids(cfg)
 
-    m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv)
-    o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv)
+    m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
+    o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
 
     for person_id in person_ids:
         df, _ = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
@@ -36,5 +36,5 @@ def train(env):
 
 
 def get_person_ids(cfg):
-    p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv)
+    p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
     return p_df.loc[:, "PERSON_ID"].values.tolist()
