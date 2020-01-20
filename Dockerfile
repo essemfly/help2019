@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:latest
 
-COPY src /
+COPY . /help2019
 
-WORKDIR /
+WORKDIR /help2019
 
 RUN pip install -r requirements.txt
