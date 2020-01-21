@@ -1,4 +1,3 @@
-import argparse
 import os
 import pandas as pd
 from tensorboardX import SummaryWriter
@@ -11,7 +10,7 @@ MEASUREMENT_SOURCE_VALUE_USES = ['HR', 'Temp', 'RR', 'SpO2', 'Pulse', 'T1', 'ABP
                                  'NBPm', 'NBPs']
 
 
-def train(env):
+def resample_and_save_by_user(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
     person_ids = get_person_ids(cfg)
@@ -20,6 +19,7 @@ def train(env):
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
 
     for person_id in person_ids:
+        print('USER_ID: ', person_id)
         df = resample(m_df, o_df, person_id, column_list=MEASUREMENT_SOURCE_VALUE_USES)
         df.to_csv(cfg.VOLUME_DIR + "/" + str(person_id) + "_measurement.csv")
 
@@ -33,6 +33,11 @@ def train(env):
             writer.add_scalar(str(person_id) + "-" + source, row[source], idx)
 
     writer.close()
+
+
+def train(env):
+    print("Train function runs")
+    # resample_and_save_by_user(env)
 
 
 def get_person_ids(cfg):
