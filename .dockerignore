@@ -1,4 +1,5 @@
 build
 docs
-src/logs
-src/volume
+logs/
+output/
+notebooks/

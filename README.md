@@ -2,7 +2,7 @@
 * localhost for testing with sample data
 * production for testing in kakao brain
 #### Tensorboard 띄우기
-* tensorboard --logdir ./src/logs 
+* tensorboard --logdir ./logs 
 * tensorboard 띄워서 잘 그려지는지 확인
 
 #### 실행

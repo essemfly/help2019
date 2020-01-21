@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
+from .constants import MEASUREMENT_SOURCE_VALUE_USES
 
 
 def string_to_datetime(time_str, format='%Y-%m-%d %H:%M:%S'):
@@ -34,13 +35,8 @@ def isNaN(num):
     return num != num
 
 
-MEASUREMENT_SOURCE_VALUE_use_list = ['HR', 'Temp', 'RR', 'SpO2', 'Pulse']
-
-
-# MEASUREMENT_SOURCE_VALUE_use_list = ['HR', 'Temp', 'RR','SpO2','Pulse','T1','ABPd','ABPm','ABPs','NBPd','NBPm','NBPs']
-
 def resample(measure_df, outcome_df, subject_id, unit_min=1, impute_strategy='nan', sampling_strategy='ignore',
-             column_list=MEASUREMENT_SOURCE_VALUE_use_list):
+             column_list=MEASUREMENT_SOURCE_VALUE_USES):
     filtered_df = measure_df[measure_df['PERSON_ID'] == subject_id]
     cohort_start_date = outcome_df[outcome_df['SUBJECT_ID'] == subject_id].iloc[0]["COHORT_START_DATE"]
     cohort_start_date = string_to_datetime(cohort_start_date)

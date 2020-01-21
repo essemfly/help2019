@@ -3,8 +3,6 @@ import torch
 from .config import LocalConfig, ProdConfig
 from .constants import outcome_cohort_csv
 
-TEST_DIR = '/data/train'
-
 
 def inference(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig

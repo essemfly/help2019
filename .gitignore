@@ -169,5 +169,6 @@ venv.bak/
 .DS_Store
 
 # tensorboard logs file
-src/logs/
-src/volume/
+logs/
+output/
+notebooks/

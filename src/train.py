@@ -1,13 +1,12 @@
 import os
 import pandas as pd
 from tensorboardX import SummaryWriter
+from datetime import date
 from .config import LocalConfig, ProdConfig
-from .constants import measurement_csv, outcome_cohort_csv, person_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
 from .resample import resample
 
-ID = os.environ.get('ID', '20200120')
-MEASUREMENT_SOURCE_VALUE_USES = ['HR', 'Temp', 'RR', 'SpO2', 'Pulse', 'T1', 'ABPd', 'ABPm', 'ABPs', 'NBPd',
-                                 'NBPm', 'NBPs']
+ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 
 def resample_and_save_by_user(env):

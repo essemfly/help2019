@@ -1,10 +1,10 @@
 class LocalConfig:
     env = 'localhost'
     TRAIN_DIR = 'sample'
-    VOLUME_DIR = 'src/volume'
-    LOG_DIR = 'src/logs'
+    VOLUME_DIR = 'output'
+    LOG_DIR = 'logs'
     TEST_DIR = 'sample'
-    OUTPUT_DIR = 'src/volume'
+    OUTPUT_DIR = 'output'
 
 
 class ProdConfig:
