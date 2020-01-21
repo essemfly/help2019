@@ -6,7 +6,7 @@ from .constants import outcome_cohort_csv
 TEST_DIR = '/data/train'
 
 
-def inference(env):
+def inference():
     cfg = ProdConfig
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
 
@@ -17,4 +17,4 @@ def inference(env):
     o_df.loc[o_df["LABEL_PROBABILITY"] > 0.5, "LABEL"] = 1
     o_df.loc[o_df["LABEL_PROBABILITY"] <= 0.5, "LABEL"] = 0
 
-    o_df.to_csv(cfg.OUTPUT_DIR + outcome_cohort_csv)
+    o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv")
