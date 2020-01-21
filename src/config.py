@@ -4,7 +4,7 @@ class LocalConfig:
     VOLUME_DIR = 'src/volume'
     LOG_DIR = 'src/logs'
     TEST_DIR = 'sample'
-    OUTPUT_DIR = '/output'
+    OUTPUT_DIR = 'src/volume'
 
 
 class ProdConfig:

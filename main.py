@@ -13,4 +13,4 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train(args.env)
     else:
-        inference()
+        inference(args.env)

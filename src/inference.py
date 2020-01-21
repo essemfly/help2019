@@ -1,13 +1,13 @@
 import pandas as pd
 import torch
-from .config import ProdConfig
+from .config import LocalConfig, ProdConfig
 from .constants import outcome_cohort_csv
 
 TEST_DIR = '/data/train'
 
 
-def inference():
-    cfg = ProdConfig
+def inference(env):
+    cfg = LocalConfig if env == 'localhost' else ProdConfig
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
 
     n_dist = torch.distributions.normal.Normal(0.3, 0.1)
