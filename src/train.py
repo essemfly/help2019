@@ -5,6 +5,7 @@ from datetime import date
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
 from .resample import resample
+from .preprocessing import exupperlowers
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -16,6 +17,8 @@ def resample_and_save_by_user(env):
 
     m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
+    
+    m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
 
     for person_id in person_ids:
         print('USER_ID: ', person_id)
