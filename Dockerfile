@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:latest
+FROM tensorflow/tensorflow:latest
 
 COPY . /help2019
 
