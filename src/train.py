@@ -6,7 +6,7 @@ from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
 from .resample import resample
 from .subdivide import divide
-from .utils import get_start_end, get_person_ids, get_birth_date, days_hours_minutes
+from .utils import get_start_end, get_person_ids, get_birth_date
 from .preprocessing import exupperlowers
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
@@ -50,22 +50,16 @@ def subdivide(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
 
     m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
+    m_df = exupperlowers(m_df)
     p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
 
     person_ids = get_person_ids(p_df)
 
     for person_id in person_ids:
-        person_resampled_df = divide(m_df, person_id)
+        birth_date = get_birth_date(p_df, person_id)
+        person_resampled_df = divide(m_df, person_id, birth_date)
         os.makedirs(f'{cfg.VOLUME_DIR}/people/v1/', exist_ok=True)
         person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/people/v1/{str(person_id)}.csv')
-
-    writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
-    person_id = person_ids[0]
-    birth_date = get_birth_date(p_df, person_id)
-
-    tensorboard_sample_df = divide(m_df, person_id)
-    for _, row in tensorboard_sample_df.iterrows():
-        writer.add_scalar("RR", row["RR"], days_hours_minutes(row["MEASUREMENT_DATETIME"] - birth_date))
 
 
 def train(env):
