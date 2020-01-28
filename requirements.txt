@@ -1,2 +1,4 @@
-tensorboardX==1.9
-pandas==0.25.3
+pandas
+tensorboardX
+sklearn
+matplotlib

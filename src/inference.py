@@ -7,8 +7,12 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense
 from tensorflow.python.client import device_lib 
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import f1_score
 from .config import LocalConfig, ProdConfig
-from .constants import outcome_cohort_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
+from .preprocessing import exupperlowers
+from .featureextraction import extract_df
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -21,17 +25,22 @@ def inference(env):
     print ("Loaded model from disk")
     classifier.summary()
 
+    m_df = pd.read_csv(cfg.TEST_DIR + measurement_csv, encoding='CP949')
+    m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
-
-## HERE - -  ##
-
-    probs = n_dist.sample([len(o_df)]).tolist()
+    feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+    sc = StandardScaler()
+    X_test = sc.fit_transform(feature_X.values)
+    
+    probs = classifier.predict(X_test)
 
     o_df["LABEL_PROBABILITY"] = probs
     o_df.loc[o_df["LABEL_PROBABILITY"] > 0.5, "LABEL"] = 1
     o_df.loc[o_df["LABEL_PROBABILITY"] <= 0.5, "LABEL"] = 0
 
-    o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv")
+    o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv", 
+                columns = ['LABEL_PROBABILITY','LABEL'],
+                index = False)
 
 def focal_loss(gamma=2., alpha=.25):
 	def focal_loss_fixed(y_true, y_pred):

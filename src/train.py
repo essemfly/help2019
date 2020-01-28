@@ -60,12 +60,12 @@ def train(env):
     Y = o_df['LABEL'].values
 
     classifier = Sequential()
-    classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
+    classifier.add(Dense(units = 256, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
     classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu'))
     classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
     #classifier.compile(optimizer = 'adam', loss=['binary_crossentropy'], metrics = ['accuracy'])
     classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
-    classifier.fit(X, Y, batch_size = 20, epochs = 100)
+    classifier.fit(X, Y, batch_size = 20, epochs = 1)
     classifier.save(cfg.LOG_DIR + '/' + str(ID) +'_SAVE.h5')
 
 def focal_loss(gamma=2., alpha=.25):

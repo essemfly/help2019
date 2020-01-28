@@ -13,7 +13,7 @@ USE_COUNT = True
 USE_FREQ = True
 USE_LAST_12_AVG = True
 USE_LAST_6_AVG = True
-USE_LAST_2_AVG = False
+USE_LAST_2_AVG = True
 USE_LAST_VALUE = False
 
 ##

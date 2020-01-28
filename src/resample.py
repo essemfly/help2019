@@ -45,8 +45,6 @@ def resample(measure_df, outcome_df, subject_id, unit_min=1, impute_strategy='na
     cohort_mins = cohort_end_date - cohort_start_date
     minutes = days_hours_minutes(cohort_mins)
 
-    # --> 큰 empty dataframe을 만들고 넣는 방식으로. # edited by DWLee, 2020.01.12.
-    # 첫번째 column을 datetime type으로 만들기 위해 index list생성.
     index_list = []
     # print(minutes)
     for idx in range(0, minutes + 1, unit_min):
@@ -76,8 +74,7 @@ def resample(measure_df, outcome_df, subject_id, unit_min=1, impute_strategy='na
             df.loc[row_time][col_type] = value
         except(KeyError):
             # This happens the df has no index for filtered_df - datetime
-            # 더 촘촘하면 이거 exception 생김.
-            # resample 방식 : 0(default)무시하고  정시에만 뽑음. 1. average(구현해야함) 2. nearest(구현해야함)
+
             if sampling_strategy.lower() == 'ignore':
                 continue
             # elif sampling_strategy.lower()=='average':
