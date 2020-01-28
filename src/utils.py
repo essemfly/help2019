@@ -1,3 +1,4 @@
+import pandas as pd
 from datetime import datetime, timedelta
 
 
@@ -45,7 +46,7 @@ def isNaN(num):
 
 
 def sort_by_datetime(m_df):
-    m_df["MEASUREMENT_DATETIME"] = pd.to_datetime(df["MEASUREMENT_DATETIME"], format="%Y-%m-%d %H:%M:%S")
+    m_df["MEASUREMENT_DATETIME"] = pd.to_datetime(m_df["MEASUREMENT_DATETIME"], format="%Y-%m-%d %H:%M:%S")
     m_df.sort_values("MEASUREMENT_DATETIME")
     return m_df
 
