@@ -2,13 +2,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
-def string_to_datetime(time_str, format='%Y-%m-%d %H:%M:%S'):
+def string_to_datetime(time_str, format='%Y-%m-%d %H:%M'):
     # '%Y-%m-%d %H:%M:%S %p'
     # edited by DWLee 2020.01.12. : Some dates have 'seconds' strings
     return datetime.strptime(time_str, format)
 
 
-def datetime_to_string(_datetime, format='%Y-%m-%d %H:%M:%S'):
+def datetime_to_string(_datetime, format='%Y-%m-%d %H:%M'):
     # '%Y-%m-%d %H:%M:%S %p'
     # edited by DWLee 2020.01.12. : Some dates have 'seconds' strings
     return _datetime.strftime(format)
