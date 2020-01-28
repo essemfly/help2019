@@ -30,3 +30,7 @@ https://help-khidi.kakaobrain.com/
 #### 3. 도커 이미지 파일 저장
 * docker save <image_name>:<version_number> | gzip > ./build/<zipped file>
 > docker save help-test:0.0.1 | gzip > ./build/help-test.0.0.1.tar.gz
+  
+#### 3-1. 도커 이미지 파일 저장 (for windows)
+* docker save -o ./build/<zipped file> <image_name>:<version_number>
+> docker save -o ./build/help-test:0.0.1.tar.gz help-test:0.0.1
