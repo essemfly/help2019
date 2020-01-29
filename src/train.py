@@ -56,10 +56,13 @@ def subdivide(env):
     person_ids = get_person_ids(p_df)
 
     for person_id in person_ids:
-        birth_date = get_birth_date(p_df, person_id)
-        person_resampled_df = divide(m_df, person_id, birth_date)
-        os.makedirs(f'{cfg.VOLUME_DIR}/people/v1/', exist_ok=True)
-        person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/people/v1/{str(person_id)}.csv')
+        try:
+            birth_date = get_birth_date(p_df, person_id)
+            person_resampled_df = divide(m_df, person_id, birth_date)
+            os.makedirs(f'{cfg.VOLUME_DIR}/people/v1/', exist_ok=True)
+            person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/people/v1/{str(person_id)}.csv')
+        except ValueError as e:
+            print('e', e)
 
 
 def train(env):
