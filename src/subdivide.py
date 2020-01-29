@@ -1,11 +1,12 @@
 import pandas as pd
 from .utils import get_person_ids, days_hours_minutes, get_birth_date
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, person_csv
-from datetime import datetime
+from .preprocessing import exupperlowers
 
 
 def divide(m_df, person_id, birth_date):
     m_df = m_df[m_df['PERSON_ID'] == person_id]
+    m_df = exupperlowers(m_df)
     m_df.loc[:, "MEASUREMENT_DATETIME"] = pd.to_datetime(m_df["MEASUREMENT_DATETIME"], format="%Y-%m-%d %H:%M")
     m_df.sort_values("MEASUREMENT_DATETIME", inplace=True)
 
@@ -39,8 +40,11 @@ def subdivide(cfg, writer):
     for person_id in person_ids:
         print('Person: ', person_id)
         birth_date = get_birth_date(p_df, person_id)
-        try:
-            person_resampled_df = divide(m_df, person_id, birth_date)
-            person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/{str(person_id)}.csv')
-        except ValueError as e:
-            print('e', e)
+        person_resampled_df = divide(m_df, person_id, birth_date)
+        columns = list(person_resampled_df.columns)
+        for source in MEASUREMENT_SOURCE_VALUE_USES:
+            if source not in columns:
+                person_resampled_df[source] = None
+        person_resampled_df = person_resampled_df[
+            ["MEASUREMENT_DATETIME", "TIME_FROM_BIRTH"] + MEASUREMENT_SOURCE_VALUE_USES]
+        person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/clean_{str(person_id)}.csv')
