@@ -59,8 +59,7 @@ def subdivide(env):
         try:
             birth_date = get_birth_date(p_df, person_id)
             person_resampled_df = divide(m_df, person_id, birth_date)
-            os.makedirs(f'{cfg.VOLUME_DIR}/people/v1/', exist_ok=True)
-            person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/people/v1/{str(person_id)}.csv')
+            person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/{str(person_id)}.csv')
         except ValueError as e:
             print('e', e)
 
