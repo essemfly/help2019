@@ -1,6 +1,6 @@
 import argparse
 
-from src.train import train
+from src.train import main
 from src.inference import inference
 
 if __name__ == "__main__":
@@ -11,6 +11,6 @@ if __name__ == "__main__":
     print('Environment: ', args.env)
     print('Mode: ', args.mode)
     if args.mode == 'train':
-        train(args.env)
+        main(args.env)
     else:
         inference(args.env)
