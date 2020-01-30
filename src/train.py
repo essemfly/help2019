@@ -32,26 +32,24 @@ def train(cfg, writer):
                            transform=transforms)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-    model = LSTM(input_size=len(MEASUREMENT_SOURCE_VALUE_USES) + 1, hidden_size=hidden_size, batch_size=batch_size)
+    model = LSTM(input_size=len(MEASUREMENT_SOURCE_VALUE_USES) + 1, hidden_size=hidden_size, batch_size=batch_size,
+                 num_labels=1)
+    model = nn.DataParallel(model)
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
-    running_loss = 0.0
     for epoch in range(epochs):
         for idx, data in enumerate(trainloader):
             x, x_len, labels = data
-            optimizer.zero_grad()
             outputs = model(x, x_len)
             loss = criterion(outputs, labels)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item()
-            print('Loss:', f'{idx} - {loss.item()}')
-
             if idx % 10 == 9:
-                writer.add_scalar('Loss', running_loss / 10, epoch * len(trainloader) + idx)
-                running_loss = 0.0
+                writer.add_scalar('Loss', loss.item(), epoch * len(trainloader) + idx)
         torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}.ckpt')
 
 
