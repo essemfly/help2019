@@ -1,4 +1,5 @@
 import os
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -16,15 +17,15 @@ ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 def train(cfg, writer):
     # TODO: Refactor for hyperparameters
-    # TODO: Tensorboard write for loss and accuracy
+    # TODO: Tensorboard write for accuracy
 
     batch_size = 64
-    lr = 0.001
+    lr = 0.01
     weight_decay = 0
     hidden_size = 128
     sampling_strategy = 'front'
     num_workers = 2
-    epochs = 5
+    epochs = 3
 
     transforms = None
     trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy=sampling_strategy,
@@ -46,10 +47,12 @@ def train(cfg, writer):
             optimizer.step()
 
             running_loss += loss.item()
-            
-            if idx % 100 == 99:
-                writer.add_scalar('Loss', running_loss / 100, epoch * len(trainloader) + idx)
+            print('Loss:', f'{idx} - {loss.item()}')
+
+            if idx % 10 == 9:
+                writer.add_scalar('Loss', running_loss / 10, epoch * len(trainloader) + idx)
                 running_loss = 0.0
+        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}.ckpt')
 
 
 def main(env):
