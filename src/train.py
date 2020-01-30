@@ -18,14 +18,15 @@ ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 def train(cfg, writer):
     # TODO: Refactor for hyperparameters
     # TODO: Tensorboard write for accuracy
-
+    
     batch_size = 64
     lr = 0.01
     weight_decay = 0
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES) + 1
     hidden_size = 128
     sampling_strategy = 'front'
-    n_gpu = 2
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    n_gpu = torch.cuda.device_count()
     num_workers = 4 * n_gpu
     num_labels = 2
     epochs = 5
@@ -36,14 +37,16 @@ def train(cfg, writer):
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels)
+    model.to(device)
     model = nn.DataParallel(model)
-
+    
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(epochs):
         running_loss = 0.0
         for idx, data in enumerate(trainloader):
+            data = tuple(t.to(device) for t in data) 
             x, x_len, labels = data
             outputs = model(x, x_len)
             loss = criterion(outputs, labels)
