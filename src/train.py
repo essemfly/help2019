@@ -1,19 +1,45 @@
 import os
-import pandas as pd
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from datetime import date
+
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
-from .resample import resample_and_save_by_user
-from .subdivide import subdivide
-from .utils import get_start_end, get_person_ids, get_birth_date
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
+from .datasets import NicuDataset
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 
 def train(cfg, writer):
-    o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
-    pass
+    # TODO: Refactor for hyperparameters
+    # TODO: Tensorboard write for loss and accuracy
+
+    transforms = None
+    trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy='front',
+                           transform=transforms)
+    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
+
+    model = nn.LSTM(len(MEASUREMENT_SOURCE_VALUE_USES) + 2, 1)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
+
+    epochs = 5
+    running_loss = 0.0
+
+    for epoch in range(epochs):
+        for i, data in enumerate(trainloader):
+            # TODO inputs type: DataFrame to tensor
+            inputs, labels = data
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
 
 
 def main(env):
@@ -22,5 +48,5 @@ def main(env):
     print("Train function runs")
 
     # resample_and_save_by_user(cfg, writer)
-    subdivide(cfg, writer)
-    # train(cfg, writer)
+    # subdivide(cfg, writer)
+    train(cfg, writer)
