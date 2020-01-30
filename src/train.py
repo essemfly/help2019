@@ -38,7 +38,7 @@ def train(cfg, writer):
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels)
     model.to(device)
-    model = nn.DataParallel(model)
+    #model = nn.DataParallel(model)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
