@@ -6,8 +6,10 @@ from tensorboardX import SummaryWriter
 from datetime import date
 
 from .config import LocalConfig, ProdConfig
+from .subdivide import subdivide
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets import NicuDataset
+from .models import LSTM
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -16,25 +18,30 @@ def train(cfg, writer):
     # TODO: Refactor for hyperparameters
     # TODO: Tensorboard write for loss and accuracy
 
-    transforms = None
-    trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy='front',
-                           transform=transforms)
-    trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-
-    model = nn.LSTM(len(MEASUREMENT_SOURCE_VALUE_USES) + 1, 1)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
-
+    batch_size = 64
+    lr = 0.001
+    weight_decay = 0
+    hidden_size = 128
+    sampling_strategy = 'front'
+    num_workers = 2
     epochs = 5
+
+    transforms = None
+    trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy=sampling_strategy,
+                           transform=transforms)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+
+    model = LSTM(input_size=len(MEASUREMENT_SOURCE_VALUE_USES) + 1, hidden_size=hidden_size, batch_size=batch_size)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
     running_loss = 0.0
 
     for epoch in range(epochs):
-        for i, data in enumerate(trainloader):
-            # TODO inputs type: DataFrame to tensor
-            inputs, labels = data
-
+        for idx, data in enumerate(trainloader):
+            x, x_len, labels = data
             optimizer.zero_grad()
-            outputs = model(inputs)
+            outputs = model(x, x_len)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
