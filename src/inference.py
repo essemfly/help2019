@@ -4,13 +4,10 @@ from datetime import date
 import tensorflow as tf
 import tensorflow.keras
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, model_from_json
-from tensorflow.keras.layers import Dense
-from tensorflow.python.client import device_lib 
+from tensorflow.keras.models import model_from_json
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import f1_score
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv
 from .preprocessing import exupperlowers
 from .featureextraction import extract_df
 
@@ -18,14 +15,12 @@ ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 def inference(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
-    
-    WEIGHT_FILE = cfg.LOG_DIR + '/model_save_' + str(ID) +'/'
 
-    json_file = open(cfg.LOG_DIR + '/model_save_' + str(ID) +'.json', 'r')
+    json_file = open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
     classifier = model_from_json(loaded_model_json)
-    classifier.load_weights(cfg.LOG_DIR + '/model_save_' + str(ID) +'.h5')
+    classifier.load_weights(cfg.LOG_DIR + '/m_' + str(ID) +'.h5')
     print("Loaded model from disk")
     classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
 

@@ -9,7 +9,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.python.client import device_lib 
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import f1_score
+#from sklearn.metrics import f1_score
 
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, outcome_cohort_csv, person_csv
@@ -47,7 +47,7 @@ def resample_and_save_by_user(env):
     writer.close()
 
 
-def train(env):
+def main(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
     print(device_lib.list_local_devices())
@@ -64,14 +64,13 @@ def train(env):
     classifier.add(Dense(units = 256, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
     classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu'))
     classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
-    #classifier.compile(optimizer = 'adam', loss=['binary_crossentropy'], metrics = ['accuracy'])
     classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
     classifier.fit(X, Y, batch_size = 20, epochs = 1)
     
     model_json = classifier.to_json()
-    with open(cfg.LOG_DIR + '/model_save_' + str(ID) +'.json', "w") as json_file:
+    with open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', "w") as json_file:
         json_file.write(model_json)
-    classifier.save_weights(cfg.LOG_DIR + '/model_save_' + str(ID) +'.h5')
+    classifier.save_weights(cfg.LOG_DIR + '/m_' + str(ID) +'.h5')
     print("Saved model to disk")
 
 def focal_loss(gamma=2., alpha=.25):

@@ -1,4 +1,4 @@
 pandas
-tensorboardX
+tensorboardX==1.9
 sklearn
 matplotlib
