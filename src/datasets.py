@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import torch
 from torch.utils.data import Dataset
 from .utils import string_to_datetime
 
@@ -17,23 +18,27 @@ class NicuDataset(Dataset):
 
     def __getitem__(self, idx):
         case = self.o_df.iloc[idx]
+        print('o_df', self.o_df.dtypes)
         person_id = case["SUBJECT_ID"]
-        cohort_start_date = string_to_datetime(case["COHORT_END_DATE"])
-        cohort_end_date = string_to_datetime(case["COHORT_START_DATE"])
+        cohort_start_date = string_to_datetime(case["COHORT_START_DATE"])
+        cohort_end_date = string_to_datetime(case["COHORT_END_DATE"])
         label = case["LABEL"]
+        # print('type', type(label))
 
         measurement_person_csv = os.path.join(self.root_dir, f'clean_{person_id}.csv')
-        m_df = pd.read_csv(measurement_person_csv)
+        m_df = pd.read_csv(measurement_person_csv, index_col=0)
 
         m_df.loc[:, "MEASUREMENT_DATETIME"] = pd.to_datetime(m_df["MEASUREMENT_DATETIME"], format="%Y-%m-%d %H:%M")
         m_df = m_df[m_df["MEASUREMENT_DATETIME"] >= cohort_start_date]
         m_df = m_df[m_df["MEASUREMENT_DATETIME"] < cohort_end_date]
-
+        m_df.drop(columns=["MEASUREMENT_DATETIME"], axis=1, inplace=True)
         m_df = self._sampling(m_df)
         m_df = self._normalize(m_df)
         m_df = self._fillna(m_df)
+        m_df = m_df.astype(float)
 
-        return {"data": m_df, "label": label}
+        m_df.to_csv(f'./test{idx}.csv')
+        return torch.from_numpy(m_df.values), label
 
     def _sampling(self, m_df):
         if self.sampling_strategy == "front":
@@ -49,7 +54,7 @@ class NicuDataset(Dataset):
 
     @staticmethod
     def _normalize(m_df):
-        return m_df.apply(lambda x: x - x.mean() / x.std(), axis=0)
+        return m_df.apply(lambda x: (x - x.mean()) / x.std(), axis=0)
 
     @staticmethod
     def _fillna(m_df):

@@ -21,7 +21,7 @@ def train(cfg, writer):
                            transform=transforms)
     trainloader = DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
 
-    model = nn.LSTM(len(MEASUREMENT_SOURCE_VALUE_USES) + 2, 1)
+    model = nn.LSTM(len(MEASUREMENT_SOURCE_VALUE_USES) + 1, 1)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
 
