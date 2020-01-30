@@ -36,15 +36,15 @@ def inference(env):
 
     for x, x_len, _ in testloader:
         with torch.no_grad():
-            logits = model(x, x_len)
+            logits = torch.nn.functional.softmax(model(x, x_len))
         if len(label_preds) == 0:
             label_preds.append(logits.detach().cpu().numpy())
         else:
             label_preds[0] = np.append(label_preds[0], logits.detach().cpu().numpy(), axis=0)
     label_preds = label_preds[0]
-
+    prob_preds = label_preds[:, 1]
     label_preds = np.argmax(label_preds, axis=1)
 
-    o_df["LABEL_PROBABILITY"] = label_preds
+    o_df["LABEL_PROBABILITY"] = prob_preds
     o_df["LABEL"] = label_preds
     o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv")
