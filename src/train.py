@@ -36,7 +36,6 @@ def train(cfg, writer):
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     running_loss = 0.0
-
     for epoch in range(epochs):
         for idx, data in enumerate(trainloader):
             x, x_len, labels = data
@@ -47,6 +46,10 @@ def train(cfg, writer):
             optimizer.step()
 
             running_loss += loss.item()
+            
+            if idx % 100 == 99:
+                writer.add_scalar('Loss', running_loss / 100, epoch * len(trainloader) + idx)
+                running_loss = 0.0
 
 
 def main(env):
