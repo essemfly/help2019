@@ -36,7 +36,7 @@ def train(cfg, writer):
                            transform=transforms)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
-                 num_labels=num_labels)
+                 num_labels=num_labels, device=device)
     model.to(device)
     #model = nn.DataParallel(model)
     

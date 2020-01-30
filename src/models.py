@@ -5,13 +5,13 @@ from torch.autograd import Variable
 
 
 class LSTM(nn.Module):
-    def __init__(self, input_size=12, hidden_size=64, num_layers=1, num_labels=2, batch_size=2):
+    def __init__(self, input_size=12, hidden_size=64, num_layers=1, num_labels=2, batch_size=2, device='cpu'):
         super(LSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.batch_size = batch_size
-
+        self.device = device
         # 0 or 1 classification
         self.num_labels = num_labels
 
@@ -21,10 +21,11 @@ class LSTM(nn.Module):
         self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels)
 
     def init_hidden_cell(self):
-        hidden = Variable(torch.randn(self.num_layers, self.batch_size, self.hidden_size))
-        cell = Variable(torch.randn(self.num_layers, self.batch_size, self.hidden_size))
-
-        return (hidden, cell)
+        hidden = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
+        cell = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
+        hidden = hidden.to(self.device)
+        cell = cell.to(self.device)    
+        return (Variable(hidden), Variable(cell))
 
     def forward(self, X, X_lengths):
         # reset the LSTM hidden state. Must be done before you run a new batch. Otherwise the LSTM will treat
