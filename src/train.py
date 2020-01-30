@@ -22,24 +22,27 @@ def train(cfg, writer):
     batch_size = 64
     lr = 0.01
     weight_decay = 0
+    input_size = len(MEASUREMENT_SOURCE_VALUE_USES) + 1
     hidden_size = 128
     sampling_strategy = 'front'
-    num_workers = 2
-    epochs = 3
+    n_gpu = 2
+    num_workers = 4 * n_gpu
+    num_labels = 2
+    epochs = 5
 
     transforms = None
     trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy=sampling_strategy,
                            transform=transforms)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-
-    model = LSTM(input_size=len(MEASUREMENT_SOURCE_VALUE_USES) + 1, hidden_size=hidden_size, batch_size=batch_size,
-                 num_labels=1)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
+    model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
+                 num_labels=num_labels)
     model = nn.DataParallel(model)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(epochs):
+        running_loss = 0.0
         for idx, data in enumerate(trainloader):
             x, x_len, labels = data
             outputs = model(x, x_len)
@@ -47,9 +50,8 @@ def train(cfg, writer):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            if idx % 10 == 9:
-                writer.add_scalar('Loss', loss.item(), epoch * len(trainloader) + idx)
+            running_loss += loss.item()
+        writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch)
         torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}.ckpt')
 
 

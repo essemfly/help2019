@@ -7,7 +7,6 @@ from .utils import string_to_datetime
 
 class NicuDataset(Dataset):
     def __init__(self, outcome_csv, root_dir, max_seq_length=4096, sampling_strategy='front', transform=None):
-        print('outcome_csv', outcome_csv)
         self.o_df = pd.read_csv(outcome_csv, encoding='CP949')
         self.root_dir = root_dir
         self.transform = transform
