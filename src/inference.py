@@ -4,7 +4,7 @@ from datetime import date
 import tensorflow as tf
 import tensorflow.keras
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.models import Sequential, model_from_json
 from tensorflow.keras.layers import Dense
 from tensorflow.python.client import device_lib 
 from sklearn.preprocessing import StandardScaler
@@ -19,11 +19,15 @@ ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 def inference(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     
-    WEIGHT_FILE = cfg.LOG_DIR + '/' + str(ID) +'_SAVE.h5'
+    WEIGHT_FILE = cfg.LOG_DIR + '/model_save_' + str(ID) +'/'
 
-    classifier = load_model(WEIGHT_FILE, custom_objects={'FocalLoss': focal_loss, 'focal_loss_fixed': focal_loss()})
-    print ("Loaded model from disk")
-    classifier.summary()
+    json_file = open(cfg.LOG_DIR + '/model_save_' + str(ID) +'.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    classifier = model_from_json(loaded_model_json)
+    classifier.load_weights(cfg.LOG_DIR + '/model_save_' + str(ID) +'.h5')
+    print("Loaded model from disk")
+    classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
 
     m_df = pd.read_csv(cfg.TEST_DIR + measurement_csv, encoding='CP949')
     m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS

@@ -5,7 +5,7 @@ from datetime import date
 import tensorflow as tf
 import tensorflow.keras
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.models import Sequential 
 from tensorflow.keras.layers import Dense
 from tensorflow.python.client import device_lib 
 from sklearn.preprocessing import StandardScaler
@@ -55,6 +55,7 @@ def train(env):
     m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
     feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+    feature_X.to_csv(cfg.LOG_DIR +"/filename.csv", mode='w')
     sc = StandardScaler()
     X = sc.fit_transform(feature_X.values)
     Y = o_df['LABEL'].values
@@ -66,7 +67,12 @@ def train(env):
     #classifier.compile(optimizer = 'adam', loss=['binary_crossentropy'], metrics = ['accuracy'])
     classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
     classifier.fit(X, Y, batch_size = 20, epochs = 1)
-    classifier.save(cfg.LOG_DIR + '/' + str(ID) +'_SAVE.h5')
+    
+    model_json = classifier.to_json()
+    with open(cfg.LOG_DIR + '/model_save_' + str(ID) +'.json', "w") as json_file:
+        json_file.write(model_json)
+    classifier.save_weights(cfg.LOG_DIR + '/model_save_' + str(ID) +'.h5')
+    print("Saved model to disk")
 
 def focal_loss(gamma=2., alpha=.25):
 	def focal_loss_fixed(y_true, y_pred):

@@ -1,7 +1,10 @@
+import numpy as np
 from datetime import datetime, timedelta
 from .constants import MEASUREMENT_SOURCE_VALUE_USES
 
 ## Predefined Features Setting ##
+
+np.seterr(divide='ignore', invalid='ignore')
 
 USE_DURATION = True
 USE_AVERAGE = True
@@ -14,7 +17,7 @@ USE_FREQ = True
 USE_LAST_12_AVG = True
 USE_LAST_6_AVG = True
 USE_LAST_2_AVG = True
-USE_LAST_VALUE = False
+USE_LAST_VALUE = True
 
 ##
 
@@ -66,12 +69,12 @@ def extract_df(measurement_df, outcome_df, column_list = MEASUREMENT_SOURCE_VALU
             last6_m_df = selected_m_df[selected_m_df['MEASUREMENT_DATETIME'] > datetime_to_string(cohort_end_date - timedelta(hours=6))]
             last2_m_df = selected_m_df[selected_m_df['MEASUREMENT_DATETIME'] > datetime_to_string(cohort_end_date - timedelta(hours=2))]
             if (USE_LAST_12_AVG):
-                odf.at[index, 'avg12' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last12_m_df['VALUE_SOURCE_VALUE'].mean()
+                odf.at[index, 'avg12' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last12_m_df['VALUE_SOURCE_VALUE'].mean() if last12_m_df['VALUE_SOURCE_VALUE'].shape[0]>0 else np.nan
             if (USE_LAST_6_AVG):
-                odf.at[index, 'avg6' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last6_m_df['VALUE_SOURCE_VALUE'].mean()
+                odf.at[index, 'avg6' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last6_m_df['VALUE_SOURCE_VALUE'].mean() if last6_m_df['VALUE_SOURCE_VALUE'].shape[0]>0 else np.nan
             if (USE_LAST_2_AVG):
-                odf.at[index, 'avg2' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last2_m_df['VALUE_SOURCE_VALUE'].mean()
-#            if (USE_LAST_VALUE):
-#                odf.at[index, 'lastval' + MEASUREMENT_SOURCE_VALUE_USES[i]] = selected_m_df.iloc[-1]['VALUE_SOURCE_VALUE'] # need fix HERE
+                odf.at[index, 'avg2' + MEASUREMENT_SOURCE_VALUE_USES[i]] = last2_m_df['VALUE_SOURCE_VALUE'].mean() if last2_m_df['VALUE_SOURCE_VALUE'].shape[0]>0 else np.nan
+            if (USE_LAST_VALUE):
+                odf.at[index, 'lastval' + MEASUREMENT_SOURCE_VALUE_USES[i]] = selected_m_df.iloc[-1]['VALUE_SOURCE_VALUE'] if selected_m_df.iloc[-1:]['VALUE_SOURCE_VALUE'].shape[0]>0 else np.nan
 
     return odf.iloc[:,5:]
