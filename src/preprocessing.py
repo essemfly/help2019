@@ -1,7 +1,7 @@
 import pandas as pd
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, preprocess_csv
 
-def exupperlowers (measurement_df, column_list=MEASUREMENT_SOURCE_VALUE_USES):
+def exupperlowers(measurement_df):
     ref_m = pd.read_csv('sample' + preprocess_csv, encoding='CP949')
     df = measurement_df
     for i in range(len(MEASUREMENT_SOURCE_VALUE_USES)):

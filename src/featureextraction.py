@@ -22,7 +22,7 @@ USE_LAST_VALUE = True
 ##
 
 def string_to_datetime_m(time_str, format='%Y-%m-%d %H:%M'):
-    return datetime.strptime(time_str, format)
+    return datetime.strptime(time_str[:16], format)
 
 def datetime_to_string(_datetime, format='%Y-%m-%d %H:%M'):
     return _datetime.strftime(format)
