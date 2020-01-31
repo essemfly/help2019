@@ -49,7 +49,7 @@ def inference(env):
         if prob > threshold:
             label.fill(1)
         else:
-            label.fill(0)    
+            label.fill(0)
 
     o_df["LABEL_PROBABILITY"] = prob_preds
     o_df["LABEL"] = label_preds
