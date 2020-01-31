@@ -20,7 +20,9 @@ class NicuDataset(Dataset):
 
     def __getitem__(self, idx):
         case = self.o_df.iloc[idx]
-        label = case["LABEL"]
+        label = None
+        if "LABEL" in case:
+            label = case["LABEL"]
         person_id = case["SUBJECT_ID"]
         birth_date = self.births[person_id]
 
