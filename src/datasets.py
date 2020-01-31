@@ -20,7 +20,7 @@ class NicuDataset(Dataset):
 
     def __getitem__(self, idx):
         case = self.o_df.iloc[idx]
-        label = None
+        label = 0.0
         if "LABEL" in case:
             label = case["LABEL"]
         person_id = case["SUBJECT_ID"]
