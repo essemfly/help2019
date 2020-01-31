@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from numpy import log
 
 
 class LSTM(nn.Module):
@@ -20,7 +21,7 @@ class LSTM(nn.Module):
 
         # output layer which projects back to label space
         self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
-        self.hidden_to_label.bias.data.fill_(positive_prob)
+        self.hidden_to_label.bias.data.fill_(-log((1-positive_prob)/positve_prob)
 
     def init_hidden_cell(self):
         hidden = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
