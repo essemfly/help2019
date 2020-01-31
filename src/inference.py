@@ -4,15 +4,15 @@ import torch
 from torch.utils.data import DataLoader
 
 from .config import LocalConfig, ProdConfig
-from .subdivide import subdivide
-from .preprocessing import preprocess
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, person_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv
 from .models import LSTM
 from .datasets import NicuDataset
 
 
 def inference(cfg, ckpt_name):
-    o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
+    mode = 'test'
+    o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
+
     batch_size = 64
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
@@ -34,8 +34,11 @@ def inference(cfg, ckpt_name):
     prob_preds = []
 
     transforms = None
-    testset = NicuDataset(cfg.TEST_DIR + outcome_cohort_csv, cfg.TEST_DIR + person_csv, cfg.VOLUME_DIR,
-                          sampling_strategy=sampling_strategy, max_seq_length=max_seq_length, transform=transforms)
+    testset = NicuDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                          transform=transforms)
+    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
+    testset.fill_people_dfs_and_births(dfs, births)
+
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
 
     for x, x_len, _ in testloader:
@@ -43,11 +46,12 @@ def inference(cfg, ckpt_name):
         x_len = x.to(device)
         actual_batch_size = x.size()
         with torch.no_grad():
-            if actual_batch_size[0] == batch_size: 
+            if actual_batch_size[0] == batch_size:
                 outputs = model(x, x_len)
             else:
-                x_padding = torch.zeros((batch_size-actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
-                x_len_padding = torch.ones(batch_size-actual_batch_size[0]).to(device)
+                x_padding = torch.zeros(
+                    (batch_size - actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
+                x_len_padding = torch.ones(batch_size - actual_batch_size[0]).to(device)
                 outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
                 outputs = outputs[:actual_batch_size[0]]
             prob = torch.nn.functional.sigmoid(outputs)
@@ -65,14 +69,11 @@ def inference(cfg, ckpt_name):
 
     o_df["LABEL_PROBABILITY"] = prob_preds
     o_df["LABEL"] = label_preds
-    o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv")
+    o_df.to_csv(cfg.OUTPUT_DIR + output_csv)
 
 
 def main_inference(env, ckpt_name):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Inference function runs")
 
-    # subdivide(cfg, 'test')
-    # preprocess(cfg, 'test', 'front')
-    # preprocess(cfg, 'test', 'average')
     inference(cfg, ckpt_name)

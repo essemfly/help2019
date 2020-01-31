@@ -1,5 +1,8 @@
-import pandas as pd
 from datetime import datetime, timedelta
+
+import pandas as pd
+
+from .constants import person_csv
 
 
 def string_to_datetime(time_str, format='%Y-%m-%d %H:%M'):
@@ -47,11 +50,6 @@ def sort_by_datetime(m_df):
     return m_df
 
 
-def get_birth_date(p_df, person_id):
-    birth_datetime = p_df[p_df["PERSON_ID"] == person_id].iloc[0]["BIRTH_DATETIME"]
-    return string_to_datetime(birth_datetime)
-
-
 def get_start_end(o_df, subject_id):
     person_df = o_df[o_df['SUBJECT_ID'] == subject_id]
     person_df = person_df.sort_values("COHORT_START_DATE")
@@ -66,3 +64,8 @@ def get_start_end(o_df, subject_id):
 
 def get_person_ids(p_df):
     return p_df.loc[:, "PERSON_ID"].values.tolist()
+
+
+def get_birth_dates(p_df):
+    return p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
+        "BIRTH_DATETIME"]

@@ -3,6 +3,7 @@ outcome_cohort_csv = "/OUTCOME_COHORT.csv"
 measurement_csv = "/MEASUREMENT_NICU.csv"
 condition_csv = "/CONDITION_OCCURENCE_NICU.csv"
 preprocess_csv = "/FOR_PREPROCESS.csv"
+output_csv = "/output.csv"
 
 ## Using 12 values out of 95 - initial try ##
 # MEASUREMENT_SOURCE_VALUE_USES = ['HR', 'Temp', 'RR', 'SpO2', 'Pulse', 'T1', 'ABPd', 'ABPm', 'ABPs', 'NBPd',

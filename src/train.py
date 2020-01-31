@@ -9,7 +9,7 @@ from datetime import date
 from .config import LocalConfig, ProdConfig
 from .subdivide import subdivide
 from .preprocessing import preprocess
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, person_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets import NicuDataset
 from .models import LSTM, FocalLoss
 
@@ -20,6 +20,7 @@ def train(cfg, writer):
     # TODO: Refactor for hyperparameters
     # TODO: Tensorboard write for accuracy
 
+    mode = 'train'
     batch_size = 64
     lr = 0.01
     weight_decay = 0
@@ -34,8 +35,11 @@ def train(cfg, writer):
     epochs = 5
 
     transforms = None
-    trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.TRAIN_DIR + person_csv, cfg.VOLUME_DIR,
-                           sampling_strategy=sampling_strategy, max_seq_length=max_seq_length, transform=transforms)
+    trainset = NicuDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                           transform=transforms)
+    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
+    trainset.fill_people_dfs_and_births(dfs, births)
+
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device)
@@ -53,15 +57,15 @@ def train(cfg, writer):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
             actual_batch_size = x.size()
-            if actual_batch_size[0] == batch_size: 
+            if actual_batch_size[0] == batch_size:
                 outputs = model(x, x_len)
                 loss = criterion(outputs, labels)
             else:
-                x_padding = torch.zeros((batch_size-actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
-                x_len_padding = torch.ones(batch_size-actual_batch_size[0]).to(device)
-                print(torch.cat((x_len, x_len_padding)))
+                x_padding = torch.zeros(
+                    (batch_size - actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
+                x_len_padding = torch.ones(batch_size - actual_batch_size[0]).to(device)
                 outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
-                loss = criterion(outputs[:actual_batch_size[0]], labels)       
+                loss = criterion(outputs[:actual_batch_size[0]], labels)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -78,8 +82,10 @@ def main_train(env):
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
     print("Train function runs")
 
-    # resample_and_save_by_user(cfg, writer)
-    # subdivide(cfg, 'train')
-    # preprocess(cfg, 'train', 'front')
-    # preprocess(cfg, 'train', 'average')
-    # train(cfg, writer)
+    subdivide(cfg, 'train')
+    subdivide(cfg, 'test')
+    preprocess(cfg, 'train', 'front')
+    preprocess(cfg, 'train', 'average')
+    preprocess(cfg, 'test', 'front')
+    preprocess(cfg, 'test', 'average')
+    train(cfg, writer)

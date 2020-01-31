@@ -1,19 +1,21 @@
-import os
 import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from .utils import string_to_datetime, get_person_ids, days_hours_minutes
+from .utils import string_to_datetime, days_hours_minutes
 
 
 class NicuDataset(Dataset):
-    def __init__(self, outcome_csv, person_csv, root_dir, max_seq_length=4096, sampling_strategy='front',
-                 transform=None):
+    def __init__(self, outcome_csv, max_seq_length=4096, transform=None):
         self.o_df = pd.read_csv(outcome_csv, encoding='CP949')
-        self.root_dir = root_dir
         self.transform = transform
         self.max_seq_length = max_seq_length
-        self.person_dfs, self.births = self._load_person_dfs(person_csv, sampling_strategy)
+        self.person_dfs = {}
+        self.births = {}
+
+    def fill_people_dfs_and_births(self, dfs, births):
+        self.person_dfs = dfs
+        self.births = births
 
     def __len__(self):
         return len(self.o_df)
@@ -50,12 +52,3 @@ class NicuDataset(Dataset):
 
         return torch.tensor(m_df, dtype=torch.float), torch.tensor(actual_seq_length, dtype=torch.long), torch.tensor(
             label, dtype=torch.long)
-
-    def _load_person_dfs(self, person_csv, sampling_strategy):
-        p_df = pd.read_csv(person_csv, encoding='CP949')
-        person_ids = get_person_ids(p_df)
-        dfs = {}
-        for person_id in person_ids:
-            dfs[person_id] = pd.read_pickle(os.path.join(self.root_dir, f'clean_{sampling_strategy}_{person_id}.pkl'))
-        return dfs, p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
-            "BIRTH_DATETIME"]

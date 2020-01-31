@@ -19,30 +19,18 @@ def exupperlowers(measurement_df):
 
 
 def preprocess(cfg, mode, sampling_strategy):
-    if mode == 'train':
-        p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
-    elif mode == 'test':
-        p_df = pd.read_csv(cfg.TEST_DIR + person_csv, encoding='CP949')
-    else:
-        raise RuntimeError("Invalid mode for train or test")
-
+    p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode))
     person_ids = get_person_ids(p_df)
     for person_id in person_ids:
         print('person_id: ', person_id)
-        if mode == 'train':
-            measurement_person_csv = os.path.join(cfg.VOLUME_DIR, f'clean_{str(person_id)}.csv')
-        elif mode == 'test':
-            measurement_person_csv = os.path.join(cfg.VOLUME_DIR, f'clean_{str(person_id)}_test.csv')
-        else:
-            raise RuntimeError("Invalid mode for train or test")
-        m_df = pd.read_csv(measurement_person_csv, index_col=0)
+        m_df = pd.read_csv(cfg.get_divided_file_path(mode, person_id), index_col=0)
         from_birth_df = m_df["TIME_FROM_BIRTH"]
         m_df.drop(columns=["MEASUREMENT_DATETIME", "TIME_FROM_BIRTH"], axis=1, inplace=True)
         m_df = _sampling(m_df, sampling_strategy)
         m_df = _normalize(m_df)
         m_df = _fillna(m_df)
         m_df["TIME_FROM_BIRTH"] = from_birth_df
-        m_df.to_pickle(f'{cfg.VOLUME_DIR}/clean_{sampling_strategy}_{str(person_id)}.pkl')
+        m_df.to_pickle(cfg.get_sampled_file_path(mode, sampling_strategy, person_id))
 
 
 def _sampling(m_df, sampling_strategy):
