@@ -65,13 +65,13 @@ def train(cfg, writer):
         torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/200131_epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
-def main(env):
+def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
     print("Train function runs")
 
     # resample_and_save_by_user(cfg, writer)
-    # subdivide(cfg, writer)
-    preprocess(cfg, 'front')
-    preprocess(cfg, 'average')
-    train(cfg, writer)
+    # subdivide(cfg, 'train')
+    # preprocess(cfg, 'train', 'front')
+    # preprocess(cfg, 'train', 'average')
+    # train(cfg, writer)

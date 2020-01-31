@@ -1,7 +1,7 @@
 import argparse
 
-from src.train import main
-from src.inference import inference
+from src.train import main_train
+from src.inference import main_inference
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Training start')
@@ -11,6 +11,6 @@ if __name__ == "__main__":
     print('Environment: ', args.env)
     print('Mode: ', args.mode)
     if args.mode == 'train':
-        main(args.env)
+        main_train(args.env)
     else:
-        inference(args.env, '200131_epoch5_front.ckpt')
+        main_inference(args.env, '200131_epoch5_front')

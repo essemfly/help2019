@@ -1,5 +1,5 @@
 import pandas as pd
-from .utils import get_person_ids, days_hours_minutes, get_birth_date
+from .utils import get_person_ids, days_hours_minutes, string_to_datetime
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, person_csv
 from .preprocessing import exupperlowers
 
@@ -31,15 +31,23 @@ def divide(m_df, person_id, birth_date):
     return pd.DataFrame(records)
 
 
-def subdivide(cfg, writer):
-    m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
-    p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
+def subdivide(cfg, mode):
+    if mode == 'train':
+        m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
+        p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
+    elif mode == 'test':
+        m_df = pd.read_csv(cfg.TEST_DIR + measurement_csv, encoding='CP949')
+        p_df = pd.read_csv(cfg.TEST_DIR + person_csv, encoding='CP949')
+    else:
+        raise RuntimeError("Invalid mode for train or test")
 
     person_ids = get_person_ids(p_df)
+    birth_dates = p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
+        "BIRTH_DATETIME"]
 
     for person_id in person_ids:
         print('Person: ', person_id)
-        birth_date = get_birth_date(p_df, person_id)
+        birth_date = string_to_datetime(birth_dates[person_id])
         person_resampled_df = divide(m_df, person_id, birth_date)
         columns = list(person_resampled_df.columns)
         for source in MEASUREMENT_SOURCE_VALUE_USES:
@@ -47,4 +55,4 @@ def subdivide(cfg, writer):
                 person_resampled_df[source] = None
         person_resampled_df = person_resampled_df[
             ["MEASUREMENT_DATETIME", "TIME_FROM_BIRTH"] + MEASUREMENT_SOURCE_VALUE_USES]
-        person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/clean_{str(person_id)}.csv')
+        person_resampled_df.to_csv(f'{cfg.VOLUME_DIR}/clean_{str(person_id)}_test.csv')
