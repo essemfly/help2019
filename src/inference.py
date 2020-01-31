@@ -19,7 +19,8 @@ def inference(env):
     sampling_strategy = 'front'
     max_seq_length = 4096
     num_workers = 4
-    num_labels = 2
+    num_labels = 1
+    threshold = 0.5
     model_name = 'epoch5'
 
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
@@ -28,7 +29,7 @@ def inference(env):
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{model_name}.ckpt'))
     model.eval()
 
-    label_preds = []
+    prob_preds = []
 
     transforms = None
     testset = NicuDataset(cfg.TEST_DIR + outcome_cohort_csv, cfg.TEST_DIR + person_csv, cfg.VOLUME_DIR,
@@ -37,14 +38,18 @@ def inference(env):
 
     for x, x_len, _ in testloader:
         with torch.no_grad():
-            logits = torch.nn.functional.softmax(model(x, x_len))
-        if len(label_preds) == 0:
-            label_preds.append(logits.detach().cpu().numpy())
+            prob = torch.nn.functional.sigmoid(model(x, x_len))
+        if len(prob_preds) == 0:
+            prob_preds.append(prob.detach().cpu().numpy())
         else:
-            label_preds[0] = np.append(label_preds[0], logits.detach().cpu().numpy(), axis=0)
-    label_preds = label_preds[0]
-    prob_preds = label_preds[:, 1]
-    label_preds = np.argmax(label_preds, axis=1)
+            prob_preds[0] = np.append(prob_preds[0], prob.detach().cpu().numpy(), axis=0)
+    prob_preds = prob_preds[0]
+    label_preds = np.zeros_like(prob_preds)
+    for prob, label in zip(prob_preds, label_preds):
+        if prob > threshold:
+            label.fill(1)
+        else:
+            label.fill(0)    
 
     o_df["LABEL_PROBABILITY"] = prob_preds
     o_df["LABEL"] = label_preds

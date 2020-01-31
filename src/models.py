@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 
 class LSTM(nn.Module):
-    def __init__(self, input_size=12, hidden_size=64, num_layers=1, num_labels=2, batch_size=2, device='cpu'):
+    def __init__(self, input_size=73, hidden_size=64, num_layers=1, num_labels=1, batch_size=64, positive_prob=0.0059, device='cpu'):
         super(LSTM, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -18,7 +18,8 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True)
 
         # output layer which projects back to label space
-        self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels)
+        self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
+        self.hidden_to_label.bias.data.fill_(positive_prob)
 
     def init_hidden_cell(self):
         hidden = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
@@ -63,3 +64,18 @@ class LSTM(nn.Module):
         # Y_hat = X
         # return Y_hat
         return output
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=0.0, alpha = 1.0):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, input, target):
+        #Do not use label smoothing. (We assume that each label is either 0 or 1.)
+        #BCE_loss = -log(pt) where pt is sigmoid(logits).
+        #focal_loss = -(1-pt)**gamma * log(pt)
+        BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        pt = torch.exp(-BCE_loss) # prevents nans when probability 0
+        focal_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+        return focal_loss.mean()

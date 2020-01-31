@@ -11,7 +11,7 @@ from .subdivide import subdivide
 from .preprocessing import preprocess
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, person_csv
 from .datasets import NicuDataset
-from .models import LSTM
+from .models import LSTM, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -42,7 +42,8 @@ def train(cfg, writer):
     model.to(device)
     # model = nn.DataParallel(model)
 
-    criterion = nn.CrossEntropyLoss()
+    #criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(epochs):
