@@ -57,8 +57,11 @@ def train(cfg, writer):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch)
-        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}.ckpt')
+            if idx % 100 == 99:
+                writer.add_scalar('Loss', running_loss / 100, epoch * len(trainloader.dataset) + idx)
+                running_loss = 0.0
+
+        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
 def main(env):
@@ -68,6 +71,6 @@ def main(env):
 
     # resample_and_save_by_user(cfg, writer)
     # subdivide(cfg, writer)
-    # train(cfg, writer)
-    preprocess(cfg, 'front')
-    preprocess(cfg, 'average')
+    # preprocess(cfg, 'front')
+    # preprocess(cfg, 'average')
+    train(cfg, writer)
