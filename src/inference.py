@@ -41,14 +41,15 @@ def inference(cfg, ckpt_name):
     for x, x_len, _ in testloader:
         x = x.to(device)
         x_len = x.to(device)
+        actual_batch_size = x.size()
         with torch.no_grad():
-            if x.size[0] == batch_size: 
+            if actual_batch_size[0] == batch_size: 
                 outputs = model(x, x_len)
             else:
-                x_padding = torch.zeros((batch_size-x.size[0], x.size[1], x.size[2])).to(device)
-                x_len_padding = torch.ones(batch_size-x.size[0]).to(device)
+                x_padding = torch.zeros((batch_size-actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
+                x_len_padding = torch.ones(batch_size-actual_batch_size[0]).to(device)
                 outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
-                outputs = outputs[:x.size[0]]
+                outputs = outputs[:actual_batch_size[0]]
             prob = torch.nn.functional.sigmoid(outputs)
         if len(prob_preds) == 0:
             prob_preds.append(prob.detach().cpu().numpy())

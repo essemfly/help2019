@@ -52,14 +52,17 @@ def train(cfg, writer):
         for idx, data in enumerate(trainloader):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
-            if x.size[0] == batch_size: 
+            print(x_len)
+            actual_batch_size = x.size()
+            if actual_batch_size[0] == batch_size: 
                 outputs = model(x, x_len)
                 loss = criterion(outputs, labels)
             else:
-                x_padding = torch.zeros((batch_size-x.size[0], x.size[1], x.size[2])).to(device)
-                x_len_padding = torch.ones(batch_size-x.size[0]).to(device)
+                x_padding = torch.zeros((batch_size-actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
+                x_len_padding = torch.ones(batch_size-actual_batch_size[0]).to(device)
+                print(torch.cat((x_len, x_len_padding)))
                 outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
-                loss = criterion(outputs[:x.size[0]], labels)       
+                loss = criterion(outputs[:actual_batch_size[0]], labels)       
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
