@@ -42,12 +42,12 @@ def train(cfg, writer):
     model.to(device)
     # model = nn.DataParallel(model)
 
-    #criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
     criterion = FocalLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(epochs):
-        print(f'Epoch{epoch+1} -------')
+        print(f'Epoch{epoch + 1} -------')
         running_loss = 0.0
         for idx, data in enumerate(trainloader):
             data = tuple(t.to(device) for t in data)
