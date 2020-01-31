@@ -40,7 +40,7 @@ def train(cfg, writer):
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device)
     model.to(device)
-    # model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
 
     # criterion = nn.CrossEntropyLoss()
     criterion = FocalLoss()
@@ -52,7 +52,6 @@ def train(cfg, writer):
         for idx, data in enumerate(trainloader):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
-            print(x_len)
             actual_batch_size = x.size()
             if actual_batch_size[0] == batch_size: 
                 outputs = model(x, x_len)
