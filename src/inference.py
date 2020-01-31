@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, person_csv
 from .models import LSTM
 from .datasets import NicuDataset
 
@@ -17,6 +17,7 @@ def inference(env):
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES) + 1
     hidden_size = 128
     sampling_strategy = 'front'
+    max_seq_length = 4096
     num_workers = 4
     num_labels = 2
     model_name = 'epoch5'
@@ -30,8 +31,8 @@ def inference(env):
     label_preds = []
 
     transforms = None
-    testset = NicuDataset(cfg.TEST_DIR + outcome_cohort_csv, cfg.VOLUME_DIR, sampling_strategy=sampling_strategy,
-                          transform=transforms)
+    testset = NicuDataset(cfg.TEST_DIR + outcome_cohort_csv, cfg.TEST_DIR + person_csv, cfg.VOLUME_DIR,
+                          sampling_strategy=sampling_strategy, max_seq_length=max_seq_length, transform=transforms)
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
     for x, x_len, _ in testloader:
