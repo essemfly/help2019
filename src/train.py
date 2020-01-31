@@ -62,7 +62,7 @@ def train(cfg, writer):
                 writer.add_scalar('Loss', running_loss / 100, epoch * len(trainloader.dataset) + idx)
                 running_loss = 0.0
 
-        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/epoch{epoch + 1}_{sampling_strategy}.ckpt')
+        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/200131_epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
 def main(env):

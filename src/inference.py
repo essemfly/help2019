@@ -9,7 +9,7 @@ from .models import LSTM
 from .datasets import NicuDataset
 
 
-def inference(env):
+def inference(env, ckpt_name):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
 
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
@@ -21,12 +21,11 @@ def inference(env):
     num_workers = 4
     num_labels = 1
     threshold = 0.5
-    model_name = 'epoch5'
 
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels)
 
-    model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{model_name}.ckpt'))
+    model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.eval()
 
     prob_preds = []

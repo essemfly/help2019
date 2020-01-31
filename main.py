@@ -13,4 +13,4 @@ if __name__ == "__main__":
     if args.mode == 'train':
         main(args.env)
     else:
-        inference(args.env)
+        inference(args.env, '200131_epoch5_front.ckpt')
