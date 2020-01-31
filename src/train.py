@@ -70,11 +70,9 @@ def train(cfg, writer):
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-            if idx % 100 == 99:
-                writer.add_scalar('Loss', running_loss / 100, epoch * len(trainloader.dataset) + idx)
-                running_loss = 0.0
+        writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
 
-        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/200131_epoch{epoch + 1}_{sampling_strategy}.ckpt')
+        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/200201_epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
 def main_train(env):
