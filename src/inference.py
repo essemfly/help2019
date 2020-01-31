@@ -13,12 +13,14 @@ from .datasets import NicuDataset
 
 def inference(cfg, ckpt_name):
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
-    batch_size = 1
+    batch_size = 64
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
     sampling_strategy = 'front'
     max_seq_length = 4096
-    num_workers = 4
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    n_gpu = torch.cuda.device_count()
+    num_workers = 4 * n_gpu
     num_labels = 1
     threshold = 0.5
 
@@ -26,6 +28,7 @@ def inference(cfg, ckpt_name):
                  num_labels=num_labels)
 
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
+    model.to(device)
     model.eval()
 
     prob_preds = []
@@ -33,11 +36,20 @@ def inference(cfg, ckpt_name):
     transforms = None
     testset = NicuDataset(cfg.TEST_DIR + outcome_cohort_csv, cfg.TEST_DIR + person_csv, cfg.VOLUME_DIR,
                           sampling_strategy=sampling_strategy, max_seq_length=max_seq_length, transform=transforms)
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
 
     for x, x_len, _ in testloader:
+        x = x.to(device)
+        x_len = x.to(device)
         with torch.no_grad():
-            prob = torch.nn.functional.sigmoid(model(x, x_len))
+            if x.size[0] == batch_size: 
+                outputs = model(x, x_len)
+            else:
+                x_padding = torch.zeros((batch_size-x.size[0], x.size[1], x.size[2])).to(device)
+                x_len_padding = torch.ones(batch_size-x.size[0]).to(device)
+                outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
+                outputs = outputs[:x.size[0]]
+            prob = torch.nn.functional.sigmoid(outputs)
         if len(prob_preds) == 0:
             prob_preds.append(prob.detach().cpu().numpy())
         else:

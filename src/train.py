@@ -36,7 +36,7 @@ def train(cfg, writer):
     transforms = None
     trainset = NicuDataset(cfg.TRAIN_DIR + outcome_cohort_csv, cfg.TRAIN_DIR + person_csv, cfg.VOLUME_DIR,
                            sampling_strategy=sampling_strategy, max_seq_length=max_seq_length, transform=transforms)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device)
     model.to(device)
@@ -52,8 +52,14 @@ def train(cfg, writer):
         for idx, data in enumerate(trainloader):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
-            outputs = model(x, x_len)
-            loss = criterion(outputs, labels)
+            if x.size[0] == batch_size: 
+                outputs = model(x, x_len)
+                loss = criterion(outputs, labels)
+            else:
+                x_padding = torch.zeros((batch_size-x.size[0], x.size[1], x.size[2])).to(device)
+                x_len_padding = torch.ones(batch_size-x.size[0]).to(device)
+                outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
+                loss = criterion(outputs[:x.size[0]], labels)       
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
