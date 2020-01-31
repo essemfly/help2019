@@ -30,7 +30,7 @@ def train(cfg, writer):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 4 * n_gpu
-    num_labels = 2
+    num_labels = 1
     epochs = 5
 
     transforms = None
