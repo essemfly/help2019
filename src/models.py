@@ -66,7 +66,7 @@ class LSTM(nn.Module):
         return output
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=0.25, alpha = 1.0):
+    def __init__(self, gamma=2.0, alpha=0.25):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
