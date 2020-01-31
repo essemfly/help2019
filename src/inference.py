@@ -14,7 +14,7 @@ def inference(env):
 
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
     batch_size = 1
-    input_size = len(MEASUREMENT_SOURCE_VALUE_USES) + 1
+    input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
     sampling_strategy = 'front'
     max_seq_length = 4096

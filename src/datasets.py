@@ -20,6 +20,7 @@ class NicuDataset(Dataset):
 
     def __getitem__(self, idx):
         case = self.o_df.iloc[idx]
+        label = case["LABEL"]
         person_id = case["SUBJECT_ID"]
         birth_date = self.births[person_id]
 
@@ -29,12 +30,10 @@ class NicuDataset(Dataset):
         start_from_birth = days_hours_minutes(cohort_start_date - string_to_datetime(birth_date))
         end_from_birth = days_hours_minutes(cohort_end_date - string_to_datetime(birth_date))
 
-        label = case["LABEL"]
-
         m_df = self.person_dfs[person_id]
-        m_df.drop(columns=["MEASUREMENT_DATETIME"], axis=1, inplace=True)
         m_df = m_df[m_df["TIME_FROM_BIRTH"] >= start_from_birth]
         m_df = m_df[m_df["TIME_FROM_BIRTH"] <= end_from_birth]
+        m_df.drop(columns=["TIME_FROM_BIRTH"], axis=1, inplace=True)
 
         m_df = np.array(m_df)
 

@@ -25,12 +25,12 @@ def preprocess(cfg, sampling_strategy):
         print('person_id: ', person_id)
         measurement_person_csv = os.path.join(cfg.VOLUME_DIR, f'clean_{person_id}.csv')
         m_df = pd.read_csv(measurement_person_csv, index_col=0)
-        datetime_df = m_df["MEASUREMENT_DATETIME"]
-        m_df.drop(columns=["MEASUREMENT_DATETIME"], axis=1, inplace=True)
+        from_birth_df = m_df["TIME_FROM_BIRTH"]
+        m_df.drop(columns=["MEASUREMENT_DATETIME", "TIME_FROM_BIRTH"], axis=1, inplace=True)
         m_df = _sampling(m_df, sampling_strategy)
         m_df = _normalize(m_df)
         m_df = _fillna(m_df)
-        m_df["MEASUREMENT_DATETIME"] = datetime_df
+        m_df["TIME_FROM_BIRTH"] = from_birth_df
         m_df.to_pickle(f'{cfg.VOLUME_DIR}/clean_{sampling_strategy}_{str(person_id)}.pkl')
 
 

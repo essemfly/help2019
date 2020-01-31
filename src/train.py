@@ -23,7 +23,7 @@ def train(cfg, writer):
     batch_size = 64
     lr = 0.01
     weight_decay = 0
-    input_size = len(MEASUREMENT_SOURCE_VALUE_USES) + 1
+    input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
     sampling_strategy = 'front'
     max_seq_length = 4096
@@ -47,6 +47,7 @@ def train(cfg, writer):
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     for epoch in range(epochs):
+        print(f'Epoch{epoch+1} -------')
         running_loss = 0.0
         for idx, data in enumerate(trainloader):
             data = tuple(t.to(device) for t in data)
@@ -71,6 +72,6 @@ def main(env):
 
     # resample_and_save_by_user(cfg, writer)
     # subdivide(cfg, writer)
-    # preprocess(cfg, 'front')
-    # preprocess(cfg, 'average')
+    preprocess(cfg, 'front')
+    preprocess(cfg, 'average')
     train(cfg, writer)
