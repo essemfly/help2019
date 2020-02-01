@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from .utils import string_to_datetime, days_hours_minutes
 
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class NicuDataset(Dataset):
     def __init__(self, outcome_csv, max_seq_length=4096, transform=None):
