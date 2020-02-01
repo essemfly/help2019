@@ -15,7 +15,7 @@ ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 def inference(env):
     print("Inference function runs")
-    #infrun(env)
+    infrun(env)
     
 def infrun(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
@@ -29,7 +29,7 @@ def infrun(env):
     classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
 
     m_df = pd.read_csv(cfg.TEST_DIR + measurement_csv, encoding='CP949')
-    m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
+    #m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
     feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
     sc = StandardScaler()
