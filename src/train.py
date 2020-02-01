@@ -31,7 +31,7 @@ def train(cfg, writer):
     max_seq_length = 1024
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
-    num_workers = 4 * n_gpu
+    num_workers = 6 * n_gpu
     num_labels = 1
     num_layers = 1
     epochs = 100
