@@ -24,7 +24,6 @@ def main(env):
 
 def train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
-    print(device_lib.list_local_devices())
     m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
     feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
@@ -45,6 +44,7 @@ def train(env):
         json_file.write(model_json)
     classifier.save_weights(cfg.LOG_DIR + '/m_' + str(ID) +'.h5')
     print("Saved model to disk")
+    
 
 def focal_loss(gamma=2., alpha=.25):
 	def focal_loss_fixed(y_true, y_pred):
@@ -52,6 +52,7 @@ def focal_loss(gamma=2., alpha=.25):
 		pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
 		return -K.mean(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1)) - K.mean((1 - alpha) * K.pow(pt_0, gamma) * K.log(1. - pt_0))
 	return focal_loss_fixed
+
 
 def get_person_ids(cfg):
     p_df = pd.read_csv(cfg.TRAIN_DIR + person_csv, encoding='CP949')
