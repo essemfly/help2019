@@ -65,41 +65,45 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
         else:
             prob_preds[0] = np.append(prob_preds[0], prob.detach().cpu().numpy(), axis=0)
     prob_preds = prob_preds[0]
-    
-    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog = True, if_summary = True)
-    
+
+    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog=True,
+                if_summary=True)
+
 
 def inference_with_threshold(cfg, logfile, threshold_strategy, threshold_percentile, threshold_exact):
     o_df = pd.read_csv(cfg.LOG_DIR + '/' + logfile, encoding='CP949')
     prob_preds = o_df["LABEL_PROBABILITY"]
-    
-    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog = False, if_summary = True)
-    
-    
-def make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog, if_summary):
+
+    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog=False,
+                if_summary=True)
+
+
+def make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog,
+                if_summary):
     label_preds = np.zeros_like(prob_preds)
-    threshold = np.percentile(prob_preds, threshold_percentile, interpolation = "nearest") if (threshold_strategy == "percentile") else threshold_exact
-    
+    threshold = np.percentile(prob_preds, threshold_percentile, interpolation="nearest") if (
+            threshold_strategy == "percentile") else threshold_exact
+
     o_df["LABEL_PROBABILITY"] = prob_preds
     o_df["LABEL"] = label_preds
     o_df.loc[o_df["LABEL_PROBABILITY"] > threshold, "LABEL"] = 1
-    
+
     if (if_savetolog):
         save_to_log(cfg, o_df)
     if (if_summary):
         inference_summary(o_df, threshold_strategy, threshold, threshold_percentile)
-        
-    o_df.to_csv(cfg.OUTPUT_DIR + output_csv, 
-                columns = ["LABEL", "LABEL_PROBABILITY"],
-                index = False)
-    
-    
+
+    o_df.to_csv(cfg.OUTPUT_DIR + output_csv,
+                columns=["LABEL", "LABEL_PROBABILITY"],
+                index=False)
+
+
 def save_to_log(cfg, o_df):
     logfile = cfg.LOG_DIR + '/' + datetime.now().strftime("%Y%m%d-%H%M") + '.csv'
     o_df.to_csv(logfile)
     print("Saved probability for further threshold tailoring as : ", logfile)
-    
-    
+
+
 def inference_summary(o_df, threshold_strategy, threshold, threshold_percentile):
     print("### INFERENCE SUMMARY ###")
     print("Estimated threshold : ", threshold)

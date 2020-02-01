@@ -17,17 +17,17 @@ class LSTM(nn.Module):
         # 0 or 1 classification
         self.num_labels = num_labels
 
-        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True, num_layers=self.num_layers)
+        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True,
+                            num_layers=self.num_layers)
 
         # output layer which projects back to label space
-        #self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
-        #self.hidden_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
+        # self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
+        # self.hidden_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
         intermediate_size = 128
         self.hidden_to_intermediate = nn.Linear(self.hidden_size, intermediate_size, bias=True)
         self.layernorm = nn.LayerNorm(intermediate_size)
         self.intermediate_to_label = nn.Linear(intermediate_size, num_labels, bias=True)
-        #self.intermediate_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
-
+        # self.intermediate_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
 
     def init_hidden_cell(self):
         hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
@@ -63,7 +63,7 @@ class LSTM(nn.Module):
         X = F.relu(X)
         X = self.layernorm(X)
         X = self.intermediate_to_label(X)
-        #output = self.hidden_to_label(self.hidden_cell[0][-1])
+        # output = self.hidden_to_label(self.hidden_cell[0][-1])
         # ---------------------
         # 4. Create softmax activations bc we're doing classification
         # Dim transformation: (batch_size * seq_len, nb_lstm_units) -> (batch_size, seq_len, nb_tags)
@@ -74,7 +74,7 @@ class LSTM(nn.Module):
 
         # Y_hat = X
         # return Y_hat
-        #return output
+        # return output
         return X
 
 

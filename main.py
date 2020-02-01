@@ -13,10 +13,10 @@ if __name__ == "__main__":
     if args.mode == 'train':
         main_train(args.env)
     else:
-        main_inference(args.env, 
-                       ckpt_name = '200202_epoch100_front', 
-                       threshold_strategy = "exact",        ## "percentile" or "exact"
-                       threshold_percentile = 100 - 0.59,    ## for threshold_strategy == "percentile"
-                       threshold_exact = 0.5,               ## for threshold_strategy == "exact"
-                       if_use_log = False, 
-                       logfile = '011458.csv')
+        main_inference(args.env,
+                       ckpt_name='200202_epoch100_front',
+                       threshold_strategy="exact",  ## "percentile" or "exact"
+                       threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
+                       threshold_exact=0.5,  ## for threshold_strategy == "exact"
+                       if_use_log=False,
+                       logfile='011458.csv')
