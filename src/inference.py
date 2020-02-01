@@ -66,7 +66,7 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
             prob_preds[0] = np.append(prob_preds[0], prob.detach().cpu().numpy(), axis=0)
     prob_preds = prob_preds[0]
     
-    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, ifsavetolog = True, ifsummary = True)
+    make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile, threshold_exact, if_savetolog = True, if_summary = True)
     
 
 def inference_with_threshold(cfg, logfile, threshold_strategy, threshold_percentile, threshold_exact):
