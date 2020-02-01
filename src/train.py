@@ -72,7 +72,7 @@ def train(cfg, writer):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
-        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200201_epoch{epoch + 1}_{sampling_strategy}.ckpt')
+        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200202_epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
 def main_train(env):
