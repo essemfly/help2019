@@ -5,6 +5,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 from datetime import date
+from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
 from .subdivide import subdivide
@@ -21,7 +22,7 @@ def train(cfg, writer):
     # TODO: Tensorboard write for accuracy
 
     mode = 'train'
-    batch_size = 64
+    batch_size = 1024
     lr = 0.01
     weight_decay = 0
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
@@ -50,11 +51,9 @@ def train(cfg, writer):
     # criterion = nn.CrossEntropyLoss()
     criterion = FocalLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    for epoch in range(epochs):
-        print(f'Epoch{epoch + 1} -------')
+    for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0
-        for idx, data in enumerate(trainloader):
+        for idx, data in enumerate(tqdm(trainloader, desc="Iteration")):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
             actual_batch_size = x.size()

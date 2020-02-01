@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv
@@ -14,7 +15,7 @@ def inference(cfg, ckpt_name):
     mode = 'test'
     o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
 
-    batch_size = 64
+    batch_size = 1024
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
     sampling_strategy = 'front'
@@ -44,7 +45,7 @@ def inference(cfg, ckpt_name):
 
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
 
-    for x, x_len, _ in testloader:
+    for x, x_len, _ in tqdm(testloader, desc="Evaluating"):
         x = x.to(device)
         x_len = x_len.to(device)
         actual_batch_size = x.size()
