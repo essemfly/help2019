@@ -71,7 +71,7 @@ def inference(cfg, ckpt_name, threshold_percentile):
 
 def inference_with_threshold(cfg, ckpt_name, threshold_percentile, logfile):
     o_df = pd.read_csv(cfg.LOG_DIR + '/' + logfile, encoding='CP949')
-    prob_preds = o_df["LABEL_PROBABILITY"]
+    prob_preds = o_df["LABEL_PROBABILITY"].to_numpy()
     
     make_output(cfg, o_df, prob_preds, threshold_percentile, ifsavetolog = False, ifsummary = True)
 
