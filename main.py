@@ -13,4 +13,8 @@ if __name__ == "__main__":
     if args.mode == 'train':
         main_train(args.env)
     else:
-        main_inference(args.env, '200201_epoch10_front')
+        main_inference(args.env, 
+                       ckpt_name = '200201_epoch10_front', 
+                       threshold_percentile = 100-0.59, 
+                       if_use_log = False, 
+                       logfile = '011458.csv')
