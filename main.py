@@ -13,4 +13,4 @@ if __name__ == "__main__":
     if args.mode == 'train':
         main_train(args.env)
     else:
-        main_inference(args.env, '200131_epoch5_front')
+        main_inference(args.env, '200201_epoch10_front')

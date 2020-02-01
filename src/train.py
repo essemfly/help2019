@@ -23,7 +23,7 @@ def train(cfg, writer):
 
     mode = 'train'
     batch_size = 1024
-    lr = 0.01
+    lr = 0.001
     weight_decay = 0
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
     hidden_size = 128
@@ -33,7 +33,7 @@ def train(cfg, writer):
     n_gpu = torch.cuda.device_count()
     num_workers = 4 * n_gpu
     num_labels = 1
-    epochs = 5
+    epochs = 10
 
     transforms = None
     trainset = NicuDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
