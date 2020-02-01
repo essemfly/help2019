@@ -14,6 +14,10 @@ from .featureextraction import extract_df
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
 def inference(env):
+    print("Inference function runs")
+    #infrun(env)
+    
+def infrun(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
 
     json_file = open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', 'r')

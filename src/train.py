@@ -17,30 +17,34 @@ from .featureextraction import extract_df
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
+def main(env):
+    print("Train function runs")
+    train(env)
+
+
 def train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
-    print("Train function runs")
     #print(device_lib.list_local_devices())
     m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
     m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
-    o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
-    feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
-    feature_X.to_csv(cfg.LOG_DIR +"/filename.csv", mode='w')
-    sc = StandardScaler()
-    X = sc.fit_transform(feature_X.values)
-    Y = o_df['LABEL'].values
+    #o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
+    #feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+    #feature_X.to_csv(cfg.LOG_DIR +"/filename.csv", mode='w')
+    #sc = StandardScaler()
+    #X = sc.fit_transform(feature_X.values)
+    #Y = o_df['LABEL'].values
 
-    classifier = Sequential()
-    classifier.add(Dense(units = 256, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
-    classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu'))
-    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
-    classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
-    classifier.fit(X, Y, batch_size = 20, epochs = 2)
+    #classifier = Sequential()
+    #classifier.add(Dense(units = 256, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
+    #classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu'))
+    #classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    #classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
+    #classifier.fit(X, Y, batch_size = 20, epochs = 2)
     
-    model_json = classifier.to_json()
-    with open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', "w") as json_file:
-        json_file.write(model_json)
-    classifier.save_weights(cfg.LOG_DIR + '/m_' + str(ID) +'.h5')
+    #model_json = classifier.to_json()
+    #with open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', "w") as json_file:
+    #    json_file.write(model_json)
+    #classifier.save_weights(cfg.LOG_DIR + '/m_' + str(ID) +'.h5')
     print("Saved model to disk")
 
 def focal_loss(gamma=2., alpha=.25):
