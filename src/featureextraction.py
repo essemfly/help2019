@@ -4,7 +4,7 @@ from .constants import MEASUREMENT_SOURCE_VALUE_USES
 
 ## Predefined Features Setting ##
 
-np.seterr(divide='ignore', invalid='ignore')
+#np.seterr(divide='ignore', invalid='ignore')
 
 USE_DURATION = True
 USE_AVERAGE = True
@@ -14,10 +14,10 @@ USE_MINMAX = True
 USE_STD = True
 USE_COUNT = True
 USE_FREQ = True
-USE_LAST_12_AVG = True
-USE_LAST_6_AVG = True
-USE_LAST_2_AVG = True
-USE_LAST_VALUE = True
+USE_LAST_12_AVG = False
+USE_LAST_6_AVG = False
+USE_LAST_2_AVG = False
+USE_LAST_VALUE = False
 
 ##
 
