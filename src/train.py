@@ -22,18 +22,19 @@ def train(cfg, writer):
     # TODO: Tensorboard write for accuracy
 
     mode = 'train'
-    batch_size = 1024
+    batch_size = 128
     lr = 0.001
     weight_decay = 0
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
-    hidden_size = 128
+    hidden_size = 512
     sampling_strategy = 'front'
-    max_seq_length = 4096
+    max_seq_length = 1024
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 4 * n_gpu
     num_labels = 1
-    epochs = 10
+    num_layers = 1
+    epochs = 50
 
     transforms = None
     trainset = NicuDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
@@ -43,13 +44,13 @@ def train(cfg, writer):
 
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
-                 num_labels=num_labels, device=device)
+                 num_labels=num_labels, device=device, num_layers=num_layers)
     model.to(device)
     if n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
     # criterion = nn.CrossEntropyLoss()
-    criterion = FocalLoss()
+    criterion = FocalLoss(gamma=5.0, alpha=1.0)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0

@@ -16,18 +16,19 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     mode = 'test'
     o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
 
-    batch_size = 1024
+    batch_size = 128
     input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
-    hidden_size = 128
+    hidden_size = 512
     sampling_strategy = 'front'
-    max_seq_length = 4096
+    max_seq_length = 1024
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 4 * n_gpu
+    num_layers = 1
     num_labels = 1
 
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
-                 num_labels=num_labels, device=device)
+                 num_labels=num_labels, device=device, num_layers=num_layers)
 
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
