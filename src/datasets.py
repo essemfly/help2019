@@ -35,7 +35,7 @@ class NicuDataset(Dataset):
         end_from_birth = days_hours_minutes(cohort_end_date - string_to_datetime(birth_date))
 
         m_df = self.person_dfs[person_id]
-        condition = (m_df["TIME_FROM_BIRTH"] >= start_from_birth) & m_df["TIME_FROM_BIRTH"] <= end_from_birth
+        condition = (m_df["TIME_FROM_BIRTH"] >= start_from_birth) & (m_df["TIME_FROM_BIRTH"] <= end_from_birth)
         m_df = m_df[condition]
         m_df.drop(columns=["TIME_FROM_BIRTH"], axis=1, inplace=True)
 
