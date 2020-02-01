@@ -25,6 +25,7 @@ def inference(cfg, ckpt_name):
     num_workers = 4 * n_gpu
     num_labels = 1
     #threshold = 0.5
+    threshold_percentile = 99
 
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device)
@@ -65,7 +66,7 @@ def inference(cfg, ckpt_name):
             prob_preds[0] = np.append(prob_preds[0], prob.detach().cpu().numpy(), axis=0)
     prob_preds = prob_preds[0]
     label_preds = np.zeros_like(prob_preds)
-    threshold = np.percentile(prob_preds, 99, interpolation = "nearest")
+    threshold = np.percentile(prob_preds, threshold_percentile, interpolation = "nearest")
     for prob, label in zip(prob_preds, label_preds):
         if prob > threshold:
             label.fill(1)
