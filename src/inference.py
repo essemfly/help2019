@@ -50,8 +50,6 @@ def inference(cfg, ckpt_name):
         actual_batch_size = x.size()
         with torch.no_grad():
             if actual_batch_size[0] == batch_size:
-                print(x)
-                print(x_len)
                 outputs = model(x, x_len)
             else:
                 x_padding = torch.zeros(
