@@ -34,7 +34,7 @@ def train(cfg, writer):
     num_workers = 4 * n_gpu
     num_labels = 1
     num_layers = 1
-    epochs = 50
+    epochs = 100
 
     transforms = None
     trainset = NicuDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
