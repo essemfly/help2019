@@ -24,8 +24,8 @@ class LSTM(nn.Module):
         self.hidden_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
 
     def init_hidden_cell(self):
-        hidden = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
-        cell = torch.randn(self.num_layers, self.batch_size, self.hidden_size)
+        hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
+        cell = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
         hidden = hidden.to(self.device)
         cell = cell.to(self.device)
         return (Variable(hidden), Variable(cell))

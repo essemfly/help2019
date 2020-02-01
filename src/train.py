@@ -44,8 +44,9 @@ def train(cfg, writer):
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device)
     model.to(device)
-    model = nn.DataParallel(model)
-
+    if n_gpu > 1:
+        model = nn.DataParallel(model)
+    model.train()
     # criterion = nn.CrossEntropyLoss()
     criterion = FocalLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -63,7 +64,7 @@ def train(cfg, writer):
             else:
                 x_padding = torch.zeros(
                     (batch_size - actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
-                x_len_padding = torch.ones(batch_size - actual_batch_size[0]).to(device)
+                x_len_padding = torch.ones(batch_size - actual_batch_size[0], dtype=torch.long).to(device)
                 outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
                 loss = criterion(outputs[:actual_batch_size[0]], labels)
             optimizer.zero_grad()
@@ -71,19 +72,20 @@ def train(cfg, writer):
             optimizer.step()
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
-
-        torch.save(model.state_dict(), f'{cfg.VOLUME_DIR}/200201_epoch{epoch + 1}_{sampling_strategy}.ckpt')
+        model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
+        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200201_epoch{epoch + 1}_{sampling_strategy}.ckpt')
 
 
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
     print("Train function runs")
-
+    '''
     subdivide(cfg, 'train')
     subdivide(cfg, 'test')
     preprocess(cfg, 'train', 'front')
     preprocess(cfg, 'train', 'average')
     preprocess(cfg, 'test', 'front')
     preprocess(cfg, 'test', 'average')
+    '''
     train(cfg, writer)
