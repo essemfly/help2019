@@ -31,19 +31,30 @@ def infrun(env):
     m_df = pd.read_csv(cfg.TEST_DIR + measurement_csv, encoding='CP949')
     #m_df = exupperlowers(m_df)  ## preprocessing by excluding predefined outliers - 200127 by SYS
     o_df = pd.read_csv(cfg.TEST_DIR + outcome_cohort_csv, encoding='CP949')
-    feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+    feature_X = extract_df(m_df, o_df)
     sc = StandardScaler()
     X_test = sc.fit_transform(feature_X.values)
-    
+    print(X_test)
     probs = classifier.predict(X_test)
 
     o_df["LABEL_PROBABILITY"] = probs
     o_df.loc[o_df["LABEL_PROBABILITY"] > 0.5, "LABEL"] = 1
     o_df.loc[o_df["LABEL_PROBABILITY"] <= 0.5, "LABEL"] = 0
+    
+    inference_summary(o_df)
 
     o_df.to_csv(cfg.OUTPUT_DIR + "/output.csv", 
                 columns = ['LABEL_PROBABILITY','LABEL'],
                 index = False)
+    
+def inference_summary(o_df):
+    print("### INFERENCE SUMMARY ###")
+    print("Total lengths : ", o_df["LABEL"].shape[0], o_df["LABEL_PROBABILITY"].shape[0])
+    print("Number of inferred positives : ", o_df["LABEL"].sum())
+    print("Mean of probability : ", o_df["LABEL_PROBABILITY"].mean())
+    print("Median of probability : ", o_df["LABEL_PROBABILITY"].median())
+    print("Min of probability : ", o_df["LABEL_PROBABILITY"].min())
+    print("Max of probability : ", o_df["LABEL_PROBABILITY"].max())
 
 def focal_loss(gamma=2., alpha=.25):
 	def focal_loss_fixed(y_true, y_pred):

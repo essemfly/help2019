@@ -4,16 +4,14 @@ from .constants import MEASUREMENT_SOURCE_VALUE_USES
 
 ## Predefined Features Setting ##
 
-#np.seterr(divide='ignore', invalid='ignore')
-
-USE_DURATION = True
+USE_DURATION = False
 USE_AVERAGE = True
 USE_MEDIAN = False
 USE_MODE = False
 USE_MINMAX = True
-USE_STD = True
-USE_COUNT = True
-USE_FREQ = True
+USE_STD = False
+USE_COUNT = False
+USE_FREQ = False
 USE_LAST_12_AVG = False
 USE_LAST_6_AVG = False
 USE_LAST_2_AVG = False
@@ -24,13 +22,16 @@ USE_LAST_VALUE = False
 def string_to_datetime_m(time_str, format='%Y-%m-%d %H:%M'):
     return datetime.strptime(time_str[:16], format)
 
+
 def datetime_to_string(_datetime, format='%Y-%m-%d %H:%M'):
     return _datetime.strftime(format)
+
 
 def days_hours_minutes(td):
     return td.days * 24 * 60 + td.seconds // 60
 
-def extract_df(measurement_df, outcome_df, column_list = MEASUREMENT_SOURCE_VALUE_USES):
+
+def extract_df(measurement_df, outcome_df):
     df = measurement_df
     odf = outcome_df
     for index, row in outcome_df.iterrows():

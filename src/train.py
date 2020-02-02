@@ -26,7 +26,7 @@ def train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     m_df = pd.read_csv(cfg.TRAIN_DIR + measurement_csv, encoding='CP949')
     o_df = pd.read_csv(cfg.TRAIN_DIR + outcome_cohort_csv, encoding='CP949')
-    feature_X = extract_df(m_df, o_df, column_list=MEASUREMENT_SOURCE_VALUE_USES)
+    feature_X = extract_df(m_df, o_df)
     feature_X.to_csv(cfg.LOG_DIR +"/featuremap.csv", mode='w')
     sc = StandardScaler()
     X = sc.fit_transform(feature_X.values)
@@ -36,9 +36,10 @@ def train(env):
     classifier.add(Dense(units = 256, kernel_initializer = 'uniform', activation = 'relu', input_dim = feature_X.shape[1]))
     classifier.add(Dense(units = 64, kernel_initializer = 'uniform', activation = 'relu'))
     classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
-    classifier.compile(optimizer = 'adam', loss=[focal_loss(gamma=2.,alpha=.25)], metrics = ['accuracy'])
-    classifier.fit(X, Y, batch_size = 20, epochs = 100)
+    classifier.compile(optimizer = 'adam', loss='binary_crossentropy', metrics = ['accuracy'])
+    classifier.fit(X, Y, batch_size = 10, epochs = 100)
     
+    #[focal_loss(gamma=2.,alpha=.25)]
     model_json = classifier.to_json()
     with open(cfg.LOG_DIR + '/m_' + str(ID) +'.json', "w") as json_file:
         json_file.write(model_json)
