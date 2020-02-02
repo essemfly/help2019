@@ -2,7 +2,8 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+import numpy as np
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from tensorboardX import SummaryWriter
 from datetime import date
 from tqdm import tqdm, trange
@@ -32,7 +33,7 @@ def train(cfg):
     num_workers = 6 * n_gpu
     num_labels = 1
     num_layers = 1
-    epochs = 100
+    epochs = 10
 
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
@@ -41,8 +42,15 @@ def train(cfg):
                                   transform=transforms)
     dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
     trainset.fill_people_dfs_and_births(dfs, births)
+    target = trainset.o_df['LABEL']
+    class_count = np.unique(target, return_counts=True)[1]
 
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
+
+    weight = 1. / class_count
+    samples_weight = weight[target]
+    samples_weight = torch.from_numpy(samples_weight)
+    sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
+    trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
                  num_labels=num_labels, device=device, num_layers=num_layers)
     model.to(device)
@@ -50,13 +58,14 @@ def train(cfg):
         model = nn.DataParallel(model)
     model.train()
     # criterion = nn.CrossEntropyLoss()
-    criterion = FocalLoss(gamma=5.0, alpha=1.0)
+    criterion = FocalLoss(gamma=0.0, alpha=1.0)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0
         for idx, data in enumerate(tqdm(trainloader, desc="Iteration")):
             data = tuple(t.to(device) for t in data)
             x, x_len, labels = data
+            print(labels)
             actual_batch_size = x.size()
             if actual_batch_size[0] == batch_size:
                 outputs = model(x, x_len)
