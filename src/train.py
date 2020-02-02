@@ -10,6 +10,7 @@ from tqdm import tqdm, trange
 from .config import LocalConfig, ProdConfig
 from .subdivide import subdivide
 from .preprocessing import preprocess
+from .condition_divide import condition_preprocess
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets import NicuDataset
 from .models import LSTM, FocalLoss
@@ -83,9 +84,12 @@ def main_train(env):
     '''
     subdivide(cfg, 'train')
     subdivide(cfg, 'test')
+    condition_preprocess(cfg, 'train')
+    condition_preprocess(cfg, 'test')
     preprocess(cfg, 'train', 'front')
     preprocess(cfg, 'train', 'average')
     preprocess(cfg, 'test', 'front')
     preprocess(cfg, 'test', 'average')
     '''
-    train(cfg, writer)
+
+    # train(cfg, writer)
