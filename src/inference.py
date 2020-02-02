@@ -81,7 +81,7 @@ def make_output(cfg, o_df, prob_preds, threshold_strategy, threshold_percentile,
     threshold = np.percentile(prob_preds, threshold_percentile, interpolation = "nearest") if (threshold_strategy == "percentile") else threshold_exact
     
     o_df["LABEL_PROBABILITY"] = prob_preds
-    o_df["LABEL"] = label_preds
+    o_df["LABEL"] = label_preds.astype(int)
     o_df.loc[o_df["LABEL_PROBABILITY"] > threshold, "LABEL"] = 1
     
     if (if_savetolog):
@@ -102,6 +102,7 @@ def save_to_log(cfg, o_df):
     
 def inference_summary(o_df, threshold_strategy, threshold, threshold_percentile):
     print("### INFERENCE SUMMARY ###")
+    print("Total lengths : ", o_df["LABEL"].shape[0], o_df["LABEL_PROBABILITY"].shape[0])
     print("Estimated threshold : ", threshold)
     if (threshold_strategy == "percentile"):
         print("  - which was set by percentile : ", threshold_percentile)
@@ -116,7 +117,7 @@ def inference_summary(o_df, threshold_strategy, threshold, threshold_percentile)
 
 def main_inference(env, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact, if_use_log, logfile):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
-
+    print("Num threads : ", torch.get_num_threads())
     if (if_use_log):
         print("Inference using previous probability log : ", logfile)
         inference_with_threshold(cfg, logfile, threshold_strategy, threshold_percentile, threshold_exact)
