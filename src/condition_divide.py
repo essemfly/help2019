@@ -5,6 +5,7 @@ from .utils import get_person_ids, get_birth_dates, string_to_datetime, days_hou
 
 
 def condition_preprocess(cfg, mode):
+    print('Condition Preprocess Starts!')
     p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
 
     person_ids = get_person_ids(p_df)

@@ -8,10 +8,9 @@ from datetime import date
 from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
-from .subdivide import subdivide
-from .preprocessing import preprocess
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
-from .datasets.measurement import MeasurementDataset
+from .condition_divide import condition_preprocess
+from .constants import CONDITION_SOURCE_VALUE_USES, outcome_cohort_csv
+from .datasets.condition import ConditionDataset
 from .models import LSTM, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
@@ -23,10 +22,9 @@ def train(cfg):
     batch_size = 128
     lr = 0.001
     weight_decay = 0
-    input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
+    input_size = len(CONDITION_SOURCE_VALUE_USES) + 1
     hidden_size = 512
-    sampling_strategy = 'front'
-    max_seq_length = 1024
+    max_seq_length = 256
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 6 * n_gpu
@@ -37,10 +35,10 @@ def train(cfg):
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
     transforms = None
-    trainset = MeasurementDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                  transform=transforms)
-    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
-    trainset.fill_people_dfs_and_births(dfs, births)
+    trainset = ConditionDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                                transform=transforms)
+    dfs, births = cfg.load_condition_dfs_births(mode)
+    trainset.fill_condition_dfs_and_births(dfs, births)
 
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
     model = LSTM(input_size=input_size, hidden_size=hidden_size, batch_size=batch_size,
@@ -73,20 +71,16 @@ def train(cfg):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
-        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200202_epoch{epoch + 1}_{sampling_strategy}.ckpt')
+        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200203_condition_epoch{epoch + 1}_base.ckpt')
 
 
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
     '''
-    subdivide(cfg, 'train')
-    subdivide(cfg, 'test')
-
-    preprocess(cfg, 'train', 'front')
-    preprocess(cfg, 'train', 'average')
-    preprocess(cfg, 'test', 'front')
-    preprocess(cfg, 'test', 'average')
+    condition_preprocess(cfg, 'train')
+    condition_preprocess(cfg, 'test')
     
     train(cfg)
     '''
+

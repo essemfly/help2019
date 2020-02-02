@@ -48,6 +48,16 @@ class BaseConfig:
         return dfs, p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
             "BIRTH_DATETIME"]
 
+    @classmethod
+    def load_condition_dfs_births(cls, mode):
+        p_df = pd.read_csv(cls.get_csv_path(person_csv, mode), encoding='CP949')
+        person_ids = get_person_ids(p_df)
+        dfs = {}
+        for person_id in person_ids:
+            dfs[person_id] = pd.read_pickle(cls.get_condition_file_path(mode, person_id))
+            return dfs, p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
+                "BIRTH_DATETIME"]
+
 
 class LocalConfig(BaseConfig):
     env = 'localhost'

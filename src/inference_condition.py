@@ -7,9 +7,9 @@ from tqdm import tqdm
 from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv
+from .constants import CONDITION_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv
 from .models import LSTM
-from .datasets.measurement import MeasurementDataset
+from .datasets.condition import ConditionDataset
 
 
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
@@ -17,10 +17,9 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
 
     batch_size = 128
-    input_size = len(MEASUREMENT_SOURCE_VALUE_USES)
+    input_size = len(CONDITION_SOURCE_VALUE_USES)
     hidden_size = 512
-    sampling_strategy = 'front'
-    max_seq_length = 1024
+    max_seq_length = 256
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 6 * n_gpu
@@ -39,10 +38,10 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     prob_preds = []
 
     transforms = None
-    testset = MeasurementDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                 transform=transforms)
-    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
-    testset.fill_people_dfs_and_births(dfs, births)
+    testset = ConditionDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                          transform=transforms)
+    dfs, births = cfg.load_condition_dfs_births(mode)
+    testset.fill_condition_dfs_and_births(dfs, births)
 
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
 

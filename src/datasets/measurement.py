@@ -2,12 +2,12 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from .utils import string_to_datetime, days_hours_minutes
+from src.utils import string_to_datetime, days_hours_minutes
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-class NicuDataset(Dataset):
+class MeasurementDataset(Dataset):
     def __init__(self, outcome_csv, max_seq_length=4096, transform=None):
         self.o_df = pd.read_csv(outcome_csv, encoding='CP949')
         self.transform = transform
