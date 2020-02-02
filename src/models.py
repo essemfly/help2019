@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from numpy import log
 
-
 class LSTM(nn.Module):
     def __init__(self, input_size=73, hidden_size=64, num_layers=1, num_labels=1, batch_size=64, positive_prob=0.0059,
                  device='cpu'):
@@ -16,9 +15,8 @@ class LSTM(nn.Module):
         self.device = device
         # 0 or 1 classification
         self.num_labels = num_labels
-
-        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True,
-                            num_layers=self.num_layers)
+    
+        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True, num_layers=self.num_layers)
 
         # output layer which projects back to label space
         # self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
@@ -55,11 +53,10 @@ class LSTM(nn.Module):
         X = torch.nn.utils.rnn.pack_padded_sequence(X, X_lengths, batch_first=True, enforce_sorted=False)
 
         # now run through LSTM
-        X, _ = self.lstm(X, self.hidden_cell)
+        _, (hidden, cell) = self.lstm(X, self.hidden_cell)
 
         # undo the packing operation
-        X, _ = torch.nn.utils.rnn.pad_packed_sequence(X, batch_first=True)
-        X = self.hidden_to_intermediate(X[:, -1, :])
+        X = self.hidden_to_intermediate(hidden[-1])
         X = F.relu(X)
         X = self.layernorm(X)
         X = self.intermediate_to_label(X)
