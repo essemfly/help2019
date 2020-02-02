@@ -1,12 +1,12 @@
 import pandas as pd
-from .utils import get_person_ids, get_birth_dates, days_hours_minutes, string_to_datetime
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, person_csv
-from .preprocessing import exupperlowers
+from src.utils import get_person_ids, get_birth_dates, days_hours_minutes, string_to_datetime
+from src.constants import MEASUREMENT_SOURCE_VALUE_USES, measurement_csv, person_csv
+from src.preprocess.utils import _exupperlowers, _sampling, _normalize, _fillna
 
 
 def divide(m_df, person_id, birth_date):
     m_df = m_df[m_df['PERSON_ID'] == person_id]
-    m_df = exupperlowers(m_df)
+    m_df = _exupperlowers(m_df)
     m_df.loc[:, "MEASUREMENT_DATETIME"] = pd.to_datetime(m_df["MEASUREMENT_DATETIME"], format="%Y-%m-%d %H:%M")
     m_df.sort_values("MEASUREMENT_DATETIME", inplace=True)
 
@@ -31,7 +31,7 @@ def divide(m_df, person_id, birth_date):
     return pd.DataFrame(records)
 
 
-def subdivide(cfg, mode):
+def measurement_preprocess(cfg, mode, sampling_strategy):
     m_df = pd.read_csv(cfg.get_csv_path(measurement_csv, mode), encoding='CP949')
     p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
 
@@ -46,6 +46,12 @@ def subdivide(cfg, mode):
         for source in MEASUREMENT_SOURCE_VALUE_USES:
             if source not in columns:
                 person_resampled_df[source] = None
-        person_resampled_df = person_resampled_df[
-            ["MEASUREMENT_DATETIME", "TIME_FROM_BIRTH"] + MEASUREMENT_SOURCE_VALUE_USES]
-        person_resampled_df.to_csv(cfg.get_divided_file_path(mode, person_id))
+        df = person_resampled_df[
+            ["TIME_FROM_BIRTH"] + MEASUREMENT_SOURCE_VALUE_USES]
+        from_birth_df = df["TIME_FROM_BIRTH"]
+        df.drop(columns=["TIME_FROM_BIRTH"], axis=1, inplace=True)
+        df = _sampling(df, sampling_strategy)
+        df = _normalize(df)
+        df = _fillna(df)
+        df["TIME_FROM_BIRTH"] = from_birth_df
+        df.to_pickle(cfg.get_sampled_file_path(mode, sampling_strategy, person_id))

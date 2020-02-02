@@ -9,10 +9,9 @@ from datetime import date
 from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
-from .subdivide import subdivide
-from .preprocessing import preprocess
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets.measurement import MeasurementDataset
+from .preprocess.measure_divide import measurement_preprocess
 from .models import LSTM, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
@@ -44,7 +43,6 @@ def train(cfg):
     trainset.fill_people_dfs_and_births(dfs, births)
     target = trainset.o_df['LABEL']
     class_count = np.unique(target, return_counts=True)[1]
-
 
     weight = 1. / class_count
     samples_weight = weight[target]
@@ -89,13 +87,10 @@ def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
     '''
-    subdivide(cfg, 'train')
-    subdivide(cfg, 'test')
-
-    preprocess(cfg, 'train', 'front')
-    preprocess(cfg, 'train', 'average')
-    preprocess(cfg, 'test', 'front')
-    preprocess(cfg, 'test', 'average')
+    measurement_preprocess(cfg, 'train', 'front')
+    measurement_preprocess(cfg, 'train', 'average')
+    measurement_preprocess(cfg, 'test', 'front')
+    measurement_preprocess(cfg, 'test', 'average')
     
     train(cfg)
     '''

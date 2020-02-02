@@ -1,7 +1,7 @@
 from copy import deepcopy
 import pandas as pd
-from .constants import CONDITION_SOURCE_VALUE_USES, person_csv, condition_csv
-from .utils import get_person_ids, get_birth_dates, string_to_datetime, days_hours_minutes
+from src.constants import CONDITION_SOURCE_VALUE_USES, person_csv, condition_csv
+from src.utils import get_person_ids, get_birth_dates, string_to_datetime, days_hours_minutes
 
 
 def condition_preprocess(cfg, mode):

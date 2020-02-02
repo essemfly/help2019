@@ -8,7 +8,7 @@ from datetime import date
 from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
-from .condition_divide import condition_preprocess
+from .preprocess.condition_divide import condition_preprocess
 from .constants import CONDITION_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets.condition import ConditionDataset
 from .models import LSTM, FocalLoss
