@@ -55,8 +55,8 @@ class BaseConfig:
         dfs = {}
         for person_id in person_ids:
             dfs[person_id] = pd.read_pickle(cls.get_condition_file_path(mode, person_id))
-            return dfs, p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
-                "BIRTH_DATETIME"]
+        return dfs, p_df[["PERSON_ID", "BIRTH_DATETIME"]].set_index("PERSON_ID").to_dict(orient='dict')[
+            "BIRTH_DATETIME"]
 
 
 class LocalConfig(BaseConfig):
