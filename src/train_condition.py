@@ -22,7 +22,7 @@ def train(cfg):
     batch_size = 128
     lr = 0.001
     weight_decay = 0
-    input_size = len(CONDITION_SOURCE_VALUE_USES) + 1
+    input_size = len(CONDITION_SOURCE_VALUE_USES)
     hidden_size = 512
     max_seq_length = 256
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
