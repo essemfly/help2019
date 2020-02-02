@@ -8,7 +8,6 @@ from datetime import date
 from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
-from .preprocess.combined_divide import combined_preprocess
 from .constants import CONDITION_SOURCE_VALUE_USES, MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv
 from .datasets.combined import CombinedDataset
 from .models import LSTM, FocalLoss
@@ -78,11 +77,26 @@ def train(cfg):
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
-    '''
-    combined_preprocess(cfg, 'train', 'front')
-    combined_preprocess(cfg, 'train', 'average')
-    combined_preprocess(cfg, 'test', 'front')
-    combined_preprocess(cfg, 'test', 'average')
-    
+
+    from .preprocess.combined_divide import combined_preprocess, combined_preprocess_from_pkl
+    # combined_preprocess(cfg, 'train', 'front')
+    # combined_preprocess(cfg, 'train', 'average')
+    # combined_preprocess(cfg, 'test', 'front')
+    # combined_preprocess(cfg, 'test', 'average')
+
+    combined_preprocess_from_pkl(cfg, 'train', 'front')
+    combined_preprocess_from_pkl(cfg, 'train', 'average')
+    combined_preprocess_from_pkl(cfg, 'test', 'front')
+    combined_preprocess_from_pkl(cfg, 'test', 'average')
+
+    # from .preprocess.measure_divide import measurement_preprocess
+    # measurement_preprocess(cfg, 'train', 'front')
+    # measurement_preprocess(cfg, 'train', 'average')
+    # measurement_preprocess(cfg, 'test', 'front')
+    # measurement_preprocess(cfg, 'test', 'average')
+
+    from .preprocess.condition_divide import condition_preprocess
+    # condition_preprocess(cfg, 'train')
+    # condition_preprocess(cfg, 'test')
+
     train(cfg)
-    '''

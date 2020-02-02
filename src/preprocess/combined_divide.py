@@ -43,6 +43,11 @@ def measure_divide(m_df, person_id, birth_date, sampling_strategy):
     df = _fillna(df)
     df["TIME_FROM_BIRTH"] = from_birth_df
 
+    return df
+
+
+def measure_divide_from_pkl(cfg, mode, sampling_strategy, person_id):
+    df = pd.read_pickle(cfg.get_sampled_file_path(mode, sampling_strategy, person_id))
     df = df[["TIME_FROM_BIRTH"] + MEASUREMENT_SOURCE_VALUE_USES]
     return df
 
@@ -77,6 +82,10 @@ def condition_divide(c_df, person_id, birth_date):
     return df
 
 
+def condition_divide_from_pkl(cfg, mode, person_id):
+    return pd.read_pickle(cfg.get_condition_file_path(mode, person_id))
+
+
 def combined_preprocess(cfg, mode, sampling_strategy):
     print('Combined Preprocess Starts!')
     m_df = pd.read_csv(cfg.get_csv_path(measurement_csv, mode), encoding='CP949')
@@ -91,6 +100,26 @@ def combined_preprocess(cfg, mode, sampling_strategy):
         birth_date = string_to_datetime(birth_dates[person_id])
         measurement_df = measure_divide(m_df, person_id, birth_date, sampling_strategy)
         condition_df = condition_divide(c_df, person_id, birth_date)
+
+        measurement_df.set_index("TIME_FROM_BIRTH", inplace=True)
+        condition_df.set_index("TIME_FROM_BIRTH", inplace=True)
+
+        df = pd.merge(measurement_df, condition_df, left_index=True, right_index=True, how='outer')
+        df = _sampling(df, 'front')
+        df = _fillna(df)
+
+        df.to_pickle(cfg.get_combined_file_path(mode, sampling_strategy, person_id))
+
+
+def combined_preprocess_from_pkl(cfg, mode, sampling_strategy):
+    print('Combined Preprocess From PKL Starts!')
+    p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
+    person_ids = get_person_ids(p_df)
+
+    for person_id in person_ids:
+        print('Person: ', person_id)
+        measurement_df = measure_divide_from_pkl(cfg, mode, sampling_strategy, person_id)
+        condition_df = condition_divide_from_pkl(cfg, mode, person_id)
 
         measurement_df.set_index("TIME_FROM_BIRTH", inplace=True)
         condition_df.set_index("TIME_FROM_BIRTH", inplace=True)
