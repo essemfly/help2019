@@ -25,11 +25,7 @@ def condition_preprocess(cfg, mode):
         new_personal_record["CONDITION_DATETIME"] = birth_date
         new_personal_record["TIME_FROM_BIRTH"] = 0
         for idx, row in c_df.iterrows():
-            if "CONDITION_DATETIME" not in new_personal_record:
-                new_personal_record["CONDITION_DATETIME"] = row["CONDITION_START_DATETIME"]
-                new_personal_record["TIME_FROM_BIRTH"] = days_hours_minutes(
-                    row["CONDITION_START_DATETIME"] - birth_date)
-            elif new_personal_record["CONDITION_DATETIME"] != row["CONDITION_START_DATETIME"]:
+            if new_personal_record["CONDITION_DATETIME"] != row["CONDITION_START_DATETIME"]:
                 if row["CONDITION_SOURCE_VALUE"] in new_personal_record:
                     records.append(deepcopy(new_personal_record))
                     new_personal_record["CONDITION_DATETIME"] = row["CONDITION_START_DATETIME"]

@@ -39,6 +39,12 @@ class BaseConfig:
         return f'{cls.VOLUME_DIR}/condition_{str(person_id)}_{mode}.pkl'
 
     @classmethod
+    def get_combined_file_path(cls, mode, sampling_strategy, person_id):
+        if mode != 'train' and mode != 'test':
+            raise RuntimeError("Invalid mode for train or test")
+        return f'{cls.VOLUME_DIR}/combined_{sampling_strategy}_{str(person_id)}_{mode}.pkl'
+
+    @classmethod
     def load_person_dfs_births(cls, mode, sampling_strategy):
         p_df = pd.read_csv(cls.get_csv_path(person_csv, mode), encoding='CP949')
         person_ids = get_person_ids(p_df)
