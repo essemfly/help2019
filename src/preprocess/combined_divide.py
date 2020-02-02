@@ -37,7 +37,7 @@ def measure_divide(m_df, person_id, birth_date, sampling_strategy):
             df[source] = None
 
     from_birth_df = df["TIME_FROM_BIRTH"]
-    df.drop(columns=["TIME_FROM_BIRTH"], axis=1, inplace=True)
+    df.drop(columns=["TIME_FROM_BIRTH", "RECORD_DATETIME"], axis=1, inplace=True)
     df = _sampling(df, sampling_strategy)
     df = _normalize(df)
     df = _fillna(df)
@@ -78,7 +78,7 @@ def condition_divide(c_df, person_id, birth_date):
 
 
 def combined_preprocess(cfg, mode, sampling_strategy):
-    print('Condition Preprocess Starts!')
+    print('Combined Preprocess Starts!')
     m_df = pd.read_csv(cfg.get_csv_path(measurement_csv, mode), encoding='CP949')
     p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
     c_df = pd.read_csv(cfg.get_csv_path(condition_csv, mode))
@@ -96,5 +96,7 @@ def combined_preprocess(cfg, mode, sampling_strategy):
         condition_df.set_index("TIME_FROM_BIRTH", inplace=True)
 
         df = pd.merge(measurement_df, condition_df, left_index=True, right_index=True, how='outer')
+        df = _sampling(df, 'front')
+        df = _fillna(df)
 
         df.to_pickle(cfg.get_combined_file_path(mode, sampling_strategy, person_id))

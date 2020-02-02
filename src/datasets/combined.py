@@ -7,16 +7,16 @@ from src.utils import string_to_datetime, days_hours_minutes
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-class ConditionDataset(Dataset):
+class CombinedDataset(Dataset):
     def __init__(self, outcome_csv, max_seq_length=256, transform=None):
         self.o_df = pd.read_csv(outcome_csv, encoding='CP949')
         self.transform = transform
         self.max_seq_length = max_seq_length
-        self.condition_dfs = {}
+        self.dfs = {}
         self.births = {}
 
-    def fill_condition_dfs_and_births(self, dfs, births):
-        self.condition_dfs = dfs
+    def fill_dfs_and_births(self, dfs, births):
+        self.dfs = dfs
         self.births = births
 
     def __len__(self):
@@ -30,18 +30,14 @@ class ConditionDataset(Dataset):
         person_id = case["SUBJECT_ID"]
         birth_date = self.births[person_id]
 
-        ''' Start 빼버리기 
         cohort_start_date = string_to_datetime(case["COHORT_START_DATE"])
         start_from_birth = days_hours_minutes(cohort_start_date - string_to_datetime(birth_date))
-        '''
-
         cohort_end_date = string_to_datetime(case["COHORT_END_DATE"])
         end_from_birth = days_hours_minutes(cohort_end_date - string_to_datetime(birth_date))
 
-        c_df = self.condition_dfs[person_id]
-        condition = c_df["TIME_FROM_BIRTH"] <= end_from_birth
-        c_df = c_df[condition]
-        c_df.drop(columns=["TIME_FROM_BIRTH"], axis=1, inplace=True)
+        c_df = self.dfs[person_id]
+        condition = (c_df.index >= start_from_birth) & (c_df.index <= end_from_birth)
+        c_df = c_df.loc[condition]
         c_df = np.array(c_df)
 
         if len(c_df) > self.max_seq_length:
