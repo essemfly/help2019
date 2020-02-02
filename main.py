@@ -3,6 +3,7 @@ import argparse
 from src.train import main_train as train
 from src.train_condition import main_train as train_condition
 from src.inference import main_inference
+from src.inference_condition import main_inference as inference_condition
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Training start')
@@ -14,10 +15,10 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train_condition(args.env)
     else:
-        main_inference(args.env,
-                       ckpt_name='200203_condition_epoch100_base',
-                       threshold_strategy="exact",  ## "percentile" or "exact"
-                       threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
-                       threshold_exact=0.5,  ## for threshold_strategy == "exact"
-                       if_use_log=False,
-                       logfile='011458.csv')
+        inference_condition(args.env,
+                            ckpt_name='200203_condition_epoch100_base',
+                            threshold_strategy="exact",  ## "percentile" or "exact"
+                            threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
+                            threshold_exact=0.5,  ## for threshold_strategy == "exact"
+                            if_use_log=False,
+                            logfile='011458.csv')
