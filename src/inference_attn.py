@@ -7,10 +7,9 @@ from tqdm import tqdm
 from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams
-from .models_new import NicuModel
-from .datasets.measurement import MeasurementDataset
-
+from .constants import CONDITION_SOURCE_VALUE_USES, MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams
+from .datasets.for_attn import AttentionDataset
+from .models import NicuModel
 
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
     mode = 'test'
@@ -20,15 +19,15 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     lr = hyperparams['lr']
     weight_decay = hyperparams['weight_decay']
     sampling_strategy = hyperparams['sampling_strategy']
-    max_seq_length = hyperparams['max_seq_len']
+    max_seq_length = hyperparams['max_seq_length']
     epochs = hyperparams['epochs']
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 6 * n_gpu
     
-    model = NicuModel(device=device)
-
+    model = NicuModel()
+    
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:
@@ -38,27 +37,20 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     prob_preds = []
 
     transforms = None
-    testset = MeasurementDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                 transform=transforms)
-    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
-    testset.fill_people_dfs_and_births(dfs, births)
+    testset = AttentionDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                              transform=transforms)
+    dfs, births = cfg.load_combined_dfs_births(mode, sampling_strategy)
+    testset.fill_dfs_and_births(dfs, births)
 
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
 
-    for x, x_len, _ in tqdm(testloader, desc="Evaluating"):
-        x = x.to(device)
-        x_len = x_len.to(device)
-        actual_batch_size = x.size()
+    for times, measures, conditions, _ in tqdm(testloader, desc="Evaluating"):
+        times = times.to(device)
+        measures = measures.to(device)
+        conditions = conditions.to(device)
         with torch.no_grad():
-            if actual_batch_size[0] == batch_size:
-                outputs = model(x, x_len)
-            else:
-                x_padding = torch.zeros(
-                    (batch_size - actual_batch_size[0], actual_batch_size[1], actual_batch_size[2])).to(device)
-                x_len_padding = torch.ones(batch_size - actual_batch_size[0], dtype=torch.long).to(device)
-                outputs = model(torch.cat((x, x_padding)), torch.cat((x_len, x_len_padding)))
-                outputs = outputs[:actual_batch_size[0]]
-            prob = torch.sigmoid(outputs)
+            outputs = model(times, measures, conditions)
+        prob = torch.sigmoid(outputs)
         if len(prob_preds) == 0:
             prob_preds.append(prob.detach().cpu().numpy())
         else:
