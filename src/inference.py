@@ -25,7 +25,8 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
-    num_workers = 6 * n_gpu
+
+    num_workers = 8 * n_gpu
 
     model = NicuModel(device=device)
 
@@ -43,7 +44,8 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
     testset.fill_people_dfs_and_births(dfs, births)
 
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False)
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False,
+                            pin_memory=True)
 
     for x, x_len, _ in tqdm(testloader, desc="Evaluating"):
         x = x.to(device)

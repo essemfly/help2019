@@ -27,7 +27,7 @@ def train(cfg):
     max_seq_length = hyperparams['max_seq_len']
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
-    num_workers = 6 * n_gpu
+    num_workers = 8 * n_gpu
     epochs = hyperparams['epochs']
 
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
@@ -46,7 +46,7 @@ def train(cfg):
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
     trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False)
     '''
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
     model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
     model.to(device=device)
     if n_gpu > 1:
