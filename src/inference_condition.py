@@ -39,7 +39,7 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
 
     transforms = None
     testset = ConditionDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                          transform=transforms)
+                               transform=transforms)
     dfs, births = cfg.load_condition_dfs_births(mode)
     testset.fill_condition_dfs_and_births(dfs, births)
 

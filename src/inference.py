@@ -15,18 +15,18 @@ from .datasets.measurement import MeasurementDataset
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
     mode = 'test'
     o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
-    
+
     batch_size = hyperparams['batch_size']
     lr = hyperparams['lr']
     weight_decay = hyperparams['weight_decay']
     sampling_strategy = hyperparams['sampling_strategy']
     max_seq_length = hyperparams['max_seq_len']
     epochs = hyperparams['epochs']
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 6 * n_gpu
-    
+
     model = NicuModel(device=device)
 
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))

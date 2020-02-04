@@ -16,6 +16,7 @@ from .models_new import NicuModel, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
+
 def train(cfg):
     # TODO: Refactor for hyperparameters
     mode = 'train'
@@ -88,4 +89,3 @@ def main_train(env):
     measurement_preprocess(cfg, 'test', 'average')
     '''
     train(cfg)
-    
