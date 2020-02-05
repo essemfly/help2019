@@ -7,27 +7,29 @@ from tqdm import tqdm
 from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
-from .constants import CONDITION_SOURCE_VALUE_USES, MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams
+from .constants import CONDITION_SOURCE_VALUE_USES, MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, \
+    hyperparams
 from .datasets.for_attn import AttentionDataset
 from .models import NicuModel
+
 
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
     mode = 'test'
     o_df = pd.read_csv(cfg.get_csv_path(outcome_cohort_csv, mode), encoding='CP949')
-    
+
     batch_size = hyperparams['batch_size']
     lr = hyperparams['lr']
     weight_decay = hyperparams['weight_decay']
     sampling_strategy = hyperparams['sampling_strategy']
     max_seq_length = hyperparams['max_seq_length']
     epochs = hyperparams['epochs']
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 6 * n_gpu
-    
+
     model = NicuModel()
-    
+
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:
@@ -38,7 +40,7 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
 
     transforms = None
     testset = AttentionDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                              transform=transforms)
+                               transform=transforms)
     dfs, births = cfg.load_combined_dfs_births(mode, sampling_strategy)
     testset.fill_dfs_and_births(dfs, births)
 

@@ -11,11 +11,16 @@ from tqdm import tqdm, trange
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, hyperparams, model_config
 from .datasets.measurement import MeasurementDataset
+
 from .preprocess.measure_divide import measurement_preprocess
 from .models_new import NicuModel, FocalLoss, ConvLstmLinear
 from .optimization import BertAdam
+# from .preprocess.measure_divide import measurement_preprocess
+from .preprocess.sample_by_hour import measurement_preprocess
+from .models_new import NicuModel, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
+
 
 def train(cfg):
     # TODO: Refactor for hyperparameters
@@ -96,11 +101,12 @@ def train(cfg):
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
+    measurement_preprocess(cfg, 'train')
+    measurement_preprocess(cfg, 'test')
     '''
     measurement_preprocess(cfg, 'train', 'front')
     measurement_preprocess(cfg, 'train', 'average')
     measurement_preprocess(cfg, 'test', 'front')
     measurement_preprocess(cfg, 'test', 'average')
     '''
-    train(cfg)
-    
+    # train(cfg)

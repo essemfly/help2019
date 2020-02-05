@@ -5,6 +5,7 @@ from torch.autograd import Variable
 from numpy import log
 from .constants import model_config
 
+
 class LSTM(nn.Module):
     def __init__(self, input_size=73, hidden_size=64, num_layers=1, num_labels=1, batch_size=64, positive_prob=0.0059,
                  device='cpu'):
@@ -16,8 +17,9 @@ class LSTM(nn.Module):
         self.device = device
         # 0 or 1 classification
         self.num_labels = num_labels
-    
-        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True, num_layers=self.num_layers)
+
+        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True,
+                            num_layers=self.num_layers)
 
         # output layer which projects back to label space
         # self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
@@ -75,6 +77,7 @@ class LSTM(nn.Module):
         # return output
         return X
 
+
 class FocalLoss(nn.Module):
     def __init__(self, gamma=2.0, alpha=0.25):
         super(FocalLoss, self).__init__()
@@ -91,6 +94,7 @@ class FocalLoss(nn.Module):
         focal_loss = self.alpha * (1 - pt) ** self.gamma * BCE_loss
         return focal_loss.mean()
 
+
 class NicuModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -98,12 +102,14 @@ class NicuModel(nn.Module):
         self.encoder1 = NicuEncoder()
         self.encoder2 = NicuEncoder()
         self.classifier = NicuClassifier()
-    
+
     def forward(self, time_from_birth, measurement, condition):
         return self.classifier(self.encoder2(self.encoder1(self.embedding(time_from_birth, measurement, condition))))
 
+
 class NicuEmbeddings(nn.Module):
     """Construct the embeddings from measurement, position and diagnosis embeddings."""
+
     def __init__(self):
         super().__init__()
         self.t_embedding = nn.Linear(1, model_config['embedd_dim'])
@@ -119,10 +125,11 @@ class NicuEmbeddings(nn.Module):
         embeddings = self.dropout(embeddings)
         return embeddings
 
+
 class NicuEncoder(nn.Module):
-    def __init__(self):    
+    def __init__(self):
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(model_config['embedd_dim'], 
+        self.self_attn = nn.MultiheadAttention(model_config['embedd_dim'],
                                                model_config['num_heads'], dropout=model_config['drop_prob'])
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(model_config['embedd_dim'], model_config['ffn_dim'])
@@ -132,7 +139,7 @@ class NicuEncoder(nn.Module):
         self.layernorm2 = nn.LayerNorm(model_config['embedd_dim'])
         self.dropout1 = nn.Dropout(model_config['drop_prob'])
         self.dropout2 = nn.Dropout(model_config['drop_prob'])
-        
+
     def forward(self, src):
         src2 = self.self_attn(src, src, src)[0]
         src = src + self.dropout1(src2)
@@ -142,11 +149,12 @@ class NicuEncoder(nn.Module):
         src = self.layernorm2(src)
         return src
 
+
 class NicuClassifier(nn.Module):
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
-    
+
     def forward(self, src):
         src = src.sum(dim=1)
         return self.linear(src)
