@@ -21,6 +21,12 @@ class BaseConfig:
             raise RuntimeError("Invalid mode for train or test")
 
     @classmethod
+    def get_hourly_divided_measure_file_path(cls, mode, person_id):
+        if mode != 'train' and mode != 'test':
+            raise RuntimeError("Invalid mode for train or test")
+        return f'{cls.VOLUME_DIR}/{str(person_id)}_measure_{mode}.csv'
+
+    @classmethod
     def get_divided_file_path(cls, mode, person_id):
         if mode != 'train' and mode != 'test':
             raise RuntimeError("Invalid mode for train or test")
