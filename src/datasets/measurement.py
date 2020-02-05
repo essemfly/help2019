@@ -8,12 +8,13 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class MeasurementDataset(Dataset):
-    def __init__(self, outcome_csv, max_seq_length=4096, transform=None):
+    def __init__(self, outcome_csv, max_seq_length=4096, transform=None, reverse_pad=False):
         self.o_df = pd.read_csv(outcome_csv, encoding='CP949')
         self.transform = transform
         self.max_seq_length = max_seq_length
         self.person_dfs = {}
         self.births = {}
+        self.reverse_pad = reverse_pad
 
     def fill_people_dfs_and_births(self, dfs, births):
         self.person_dfs = dfs
@@ -49,7 +50,10 @@ class MeasurementDataset(Dataset):
         else:
             actual_seq_length = len(m_df)
             padded_m_df = np.zeros((self.max_seq_length, m_df.shape[1]))
-            padded_m_df[:actual_seq_length, :] = m_df
+            if self.reverse_pad:
+                padded_m_df[-actual_seq_length:, :] = m_df
+            else:
+                padded_m_df[:actual_seq_length, :] = m_df
             m_df = padded_m_df
 
         return torch.tensor(m_df, dtype=torch.float), torch.tensor(actual_seq_length, dtype=torch.long), torch.tensor(

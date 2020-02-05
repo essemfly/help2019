@@ -37,10 +37,6 @@ CONDITION_SOURCE_VALUE_USES = [
     "G91.8", "P91.7", "P52.3", "P61.0", "P59.8", "H90.2", "F19.0", "Q27.0", "D22.5", "R49.0", "R09.2", "R09.3", "S36.4",
     "P52.0", "K91.4"]
 
-model_config = {'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES), 'con_dim': len(CONDITION_SOURCE_VALUE_USES), 'embedd_dim': 32, 'drop_prob': 0.1, 'num_heads': 4, 'ffn_dim': 128, 'num_labels': 1, 'num_layers': 1}
-#model_config = {'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES), 'con_dim': len(CONDITION_SOURCE_VALUE_USES), 'embedd_dim': 32, 'drop_prob': 0.1, 'num_heads': 4, 'ffn_dim': 128, 'num_labels': 1, 'num_layers': 1}
-#model_config = {'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES), 'con_dim': len(CONDITION_SOURCE_VALUE_USES), 'embedd_dim': 256, 'drop_prob': 0.1, 'num_heads': 8, 'ffn_dim': 1024, 'num_labels': 1, 'num_layers': 2}
+model_config = {'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES), 'con_dim': len(CONDITION_SOURCE_VALUE_USES), 'embedd_dim': 16, 'drop_prob': 0.1, 'num_heads': 4, 'ffn_dim': 64, 'num_labels': 1, 'num_layers': 2, 'num_stacks': 2, 'hidden_dim': 64}
 
-hyperparams = {'batch_size':1024, 'lr': 0.001, 'weight_decay': 0.01, 'sampling_strategy': 'front', 'max_seq_len': 512, 'epochs': 100, 'gamma': 2.0, 'alpha': 0.25, 'prior_prob': 0.059}
-#hyperparams = {'batch_size':8, 'lr': 0.001, 'weight_decay': 0.01, 'sampling_strategy': 'front', 'max_seq_len': 256, 'epochs': 100, 'gamma': 2.0, 'alpha': 0.25, 'prior_prob': 0.059}
-#hyperparams = {'batch_size':32, 'lr': 0.001, 'weight_decay': 0.01, 'sampling_strategy': 'front', 'max_seq_len': 1024, 'epochs': 100, 'gamma': 2.0, 'alpha': 0.25, 'prior_prob': 0.059}
+hyperparams = {'batch_size':256, 'lr': 0.001, 'weight_decay': 0.01, 'sampling_strategy': 'front', 'max_seq_len': 1024, 'epochs': 5, 'gamma': 2.0, 'alpha': 0.25, 'prior_prob': 0.059, 'warmup_proportion':0.1}
