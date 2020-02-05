@@ -8,7 +8,7 @@ from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams
-from .models_new import NicuModel, ConvLstmLinear
+from .models import NicuModel, ConvLstmLinear
 from .datasets.measurement import MeasurementDataset
 
 

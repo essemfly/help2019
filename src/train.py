@@ -13,11 +13,10 @@ from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, hyperp
 from .datasets.measurement import MeasurementDataset
 
 from .preprocess.measure_divide import measurement_preprocess
-from .models_new import NicuModel, FocalLoss, ConvLstmLinear
+from .models import NicuModel, FocalLoss, ConvLstmLinear
 from .optimization import BertAdam
 # from .preprocess.measure_divide import measurement_preprocess
 from .preprocess.sample_by_hour import measurement_preprocess
-from .models_new import NicuModel, FocalLoss
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -35,7 +34,7 @@ def train(cfg):
     num_workers = 8 * n_gpu
     epochs = hyperparams['epochs']
     reverse_pad = True
-    
+
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
     transforms = None
@@ -52,9 +51,10 @@ def train(cfg):
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
     trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False)
     '''
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False,
+                             pin_memory=True)
     model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
-    #model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
+    # model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
     print(hyperparams)
     print(model_config)
     print(model)
@@ -63,13 +63,12 @@ def train(cfg):
         model = nn.DataParallel(model)
     model.train()
     criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
-    
-    #optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    
+
+    # optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
     num_steps = len(trainloader) * epochs
     optimizer = BertAdam(model.parameters(), lr=lr, warmup=hyperparams['warmup_proportion'], t_total=num_steps)
-    
-    
+
     for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0
         for idx, data in enumerate(tqdm(trainloader, desc="Iteration")):
@@ -77,7 +76,7 @@ def train(cfg):
             x, x_len, labels = data
             if reverse_pad:
                 outputs = model(x)
-                loss = criterion(outputs, labels)    
+                loss = criterion(outputs, labels)
             else:
                 actual_batch_size = x.size()
                 if actual_batch_size[0] == batch_size:

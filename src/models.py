@@ -2,45 +2,81 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from numpy import log
-from .constants import model_config
+import numpy as np
+from .constants import model_config, hyperparams
+from math import log
 
-
-class LSTM(nn.Module):
-    def __init__(self, input_size=73, hidden_size=64, num_layers=1, num_labels=1, batch_size=64, positive_prob=0.0059,
-                 device='cpu'):
-        super(LSTM, self).__init__()
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.batch_size = batch_size
+class ConvLstmLinear(nn.Module):
+    def __init__(self, device='cpu', prior_prob=None):
+        super().__init__()
+        self.m_embedding = nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1)
         self.device = device
-        # 0 or 1 classification
-        self.num_labels = num_labels
-
-        self.lstm = nn.LSTM(input_size=self.input_size, hidden_size=self.hidden_size, batch_first=True,
-                            num_layers=self.num_layers)
-
-        # output layer which projects back to label space
-        # self.hidden_to_label = nn.Linear(self.hidden_size, self.num_labels, bias=True)
-        # self.hidden_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
-        intermediate_size = 128
-        self.hidden_to_intermediate = nn.Linear(self.hidden_size, intermediate_size, bias=True)
-        self.layernorm = nn.LayerNorm(intermediate_size)
-        self.intermediate_to_label = nn.Linear(intermediate_size, num_labels, bias=True)
-        # self.intermediate_to_label.bias.data.fill_(-log((1 - positive_prob) / positive_prob))
-
-    def init_hidden_cell(self):
-        hidden = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
-        cell = torch.zeros(self.num_layers, self.batch_size, self.hidden_size)
+        drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
+        self.lstm = nn.LSTM(input_size=model_config['embedd_dim'], hidden_size=model_config['hidden_dim'], 
+                            batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob, bidirectional=True)
+        self.linear = nn.Linear(model_config['hidden_dim'] * 2, model_config['num_labels'])
+        if prior_prob is not None:
+            self.linear.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
+            
+    def _init_hidden(self, batch_size):
+        hidden = torch.zeros(model_config['num_layers'] * 2, batch_size, model_config['hidden_dim'])
         hidden = hidden.to(self.device)
+        return Variable(hidden)
+    
+    def _init_cell(self, batch_size):
+        cell = torch.zeros(model_config['num_layers']*2, batch_size, model_config['hidden_dim'])
         cell = cell.to(self.device)
-        return (Variable(hidden), Variable(cell))
+        return Variable(cell)
 
-    def forward(self, X, X_lengths):
+    def forward(self, x):
+        # Embedding our raw input
+        x = self.m_embedding(x.transpose(1, 2)).transpose(1, 2)
         # reset the LSTM hidden state. Must be done before you run a new batch. Otherwise the LSTM will treat
         # a new batch as a continuation of a sequence
-        self.hidden_cell = self.init_hidden_cell()
+        hidden = self._init_hidden(x.size()[0])
+        cell = self._init_cell(x.size()[0])
+
+        # pack_padded_sequence so that padded items in the sequence won't be shown to the LSTM
+        # x = torch.nn.utils.rnn.pack_padded_sequence(x, x_len, batch_first=True, enforce_sorted=False)
+        # now run through LSTM
+        if self.training:
+            self.lstm.flatten_parameters()
+        _, (hidden, cell) = self.lstm(x, (hidden, cell))
+        # undo the packing operation
+        #x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])       
+        
+        return self.linear(torch.cat((hidden[-1],hidden[-2]),dim=1))
+
+'''
+=======
+
+>>>>>>> 5a5f0496dd919438333af7adb97c9bd0edc5af79
+class NicuLSTM(nn.Module):
+    def __init__(self, device='cpu'):
+        super().__init__()
+        self.device = device
+        drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
+        self.lstm = nn.LSTM(input_size=model_config['measure_dim'], hidden_size=model_config['embedd_dim'],
+                            batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob)
+
+    def _init_hidden(self, batch_size):
+        hidden = torch.zeros(model_config['num_layers'], batch_size, model_config['embedd_dim'])
+        hidden = hidden.to(self.device)
+        return Variable(hidden)
+
+    def _init_cell(self, batch_size):
+        cell = torch.zeros(model_config['num_layers'], batch_size, model_config['embedd_dim'])
+        cell = cell.to(self.device)
+        return Variable(cell)
+
+    def forward(self, x, x_len):
+        # reset the LSTM hidden state. Must be done before you run a new batch. Otherwise the LSTM will treat
+        # a new batch as a continuation of a sequence
+        hidden = self._init_hidden(x.size()[0])
+        cell = self._init_cell(x.size()[0])
+<<<<<<< HEAD
+=======
+
         # ---------------------
         # 1. embed the input
         # Dim transformation: (batch_size, seq_len, 1) -> (batch_size, seq_len, embedding_dim)
@@ -51,33 +87,144 @@ class LSTM(nn.Module):
         # 2. Run through RNN
         # TRICK 2 ********************************
         # Dim transformation: (batch_size, seq_len, embedding_dim) -> (batch_size, seq_len, nb_lstm_units)
+>>>>>>> 5a5f0496dd919438333af7adb97c9bd0edc5af79
 
         # pack_padded_sequence so that padded items in the sequence won't be shown to the LSTM
-        X = torch.nn.utils.rnn.pack_padded_sequence(X, X_lengths, batch_first=True, enforce_sorted=False)
-
+        x = torch.nn.utils.rnn.pack_padded_sequence(x, x_len, batch_first=True, enforce_sorted=False)
         # now run through LSTM
-        _, (hidden, cell) = self.lstm(X, self.hidden_cell)
+        if self.training:
+            self.lstm.flatten_parameters()
+        x, _ = self.lstm(x, (hidden, cell))
+<<<<<<< HEAD
+        # undo the packing operation
+        x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])       
+        
+        return x, x_len
+
+=======
 
         # undo the packing operation
-        X = self.hidden_to_intermediate(hidden[-1])
-        X = F.relu(X)
-        X = self.layernorm(X)
-        X = self.intermediate_to_label(X)
-        # output = self.hidden_to_label(self.hidden_cell[0][-1])
-        # ---------------------
-        # 4. Create softmax activations bc we're doing classification
-        # Dim transformation: (batch_size * seq_len, nb_lstm_units) -> (batch_size, seq_len, nb_tags)
-        # X = F.log_softmax(X, dim=1)
-
-        # I like to reshape for mental sanity so we're back to (batch_size, seq_len, nb_tags)
-        # X = X.view(batch_size, seq_len, self.nb_tags)
-
-        # Y_hat = X
-        # return Y_hat
-        # return output
-        return X
+        x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])
+        return x, x_len
 
 
+>>>>>>> 5a5f0496dd919438333af7adb97c9bd0edc5af79
+class NicuEmbeddings(nn.Module):
+    """Construct the embeddings from measurement hidden state and positions"""
+
+    def __init__(self, device='cpu'):
+        super().__init__()
+        self.t_embedding = nn.Embedding(hyperparams['max_seq_len'] + 1, model_config['embedd_dim'], padding_idx=0)
+        self.m_embedding = NicuLSTM(device=device)
+        self.device = device
+        self.layernorm = nn.LayerNorm(model_config['embedd_dim'])
+        self.dropout = nn.Dropout(model_config['drop_prob'])
+
+    def _init_time_idx(self, batch_size):
+        time_idx = torch.zeros(batch_size, hyperparams['max_seq_len']).long()
+        time_idx = time_idx.to(self.device)
+        return Variable(time_idx)
+
+    def forward(self, x, x_len):
+        x, x_len = self.m_embedding(x, x_len)
+        time_idx = self._init_time_idx(x.size()[0])
+        for i, seq_len in enumerate(x_len.tolist()):
+            if seq_len < hyperparams['max_seq_len']:
+                time_idx.data[i, :seq_len] = torch.arange(hyperparams['max_seq_len'] - seq_len + 1,
+                                                          hyperparams['max_seq_len'] + 1)
+                # time_idx.data[i, :seq_len] = torch.arange(1, seq_len + 1)
+            else:
+                time_idx.data[i] = torch.arange(1, hyperparams['max_seq_len'] + 1)
+        embeddings = self.t_embedding(time_idx) + x
+        embeddings = self.layernorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        return embeddings
+'''
+class NicuEmbeddings(nn.Module):
+    """Construct the embeddings from measurement hidden state and positions"""
+    def __init__(self, device='cpu'):
+        super().__init__()
+        self.t_embedding = nn.Embedding(hyperparams['max_seq_len'], model_config['embedd_dim'])
+        self.m_embedding = nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1)
+        self.device = device
+        self.layernorm = nn.LayerNorm(model_config['embedd_dim'])
+        self.dropout = nn.Dropout(model_config['drop_prob'])
+    
+    def _init_time_idx(self, batch_size):
+        time_idx = torch.stack([torch.arange(hyperparams['max_seq_len'])] * batch_size).long()
+        time_idx = time_idx.to(self.device)
+        return Variable(time_idx)
+        
+    def forward(self, x):
+        time_idx = self._init_time_idx(x.size()[0])
+        embeddings = self.t_embedding(time_idx) + self.m_embedding(x.transpose(1, 2)).transpose(1, 2)
+        embeddings = self.layernorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        return embeddings
+
+
+class NicuEncoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.self_attn = nn.MultiheadAttention(model_config['embedd_dim'],
+                                               model_config['num_heads'], dropout=model_config['drop_prob'])
+        # Implementation of Feedforward model
+        self.linear1 = nn.Linear(model_config['embedd_dim'], model_config['ffn_dim'])
+        self.dropout1 = nn.Dropout(model_config['drop_prob'])
+        self.layernorm1 = nn.LayerNorm(model_config['embedd_dim'])
+        
+        self.linear2 = nn.Linear(model_config['ffn_dim'], model_config['embedd_dim'])
+        self.dropout2 = nn.Dropout(model_config['drop_prob'])
+
+        self.layernorm2 = nn.LayerNorm(model_config['embedd_dim'])
+
+    def forward(self, src):
+        src2 = self.self_attn(src, src, src)[0]
+        src = src + self.dropout1(src2)
+        src = self.layernorm1(src)
+        src2 = self.linear2(F.relu(self.linear1(src)))
+        src = src + self.dropout2(src2)
+        src = self.layernorm2(src)
+        return src
+
+
+class NicuClassifier(nn.Module):
+    def __init__(self, prior_prob=None):
+        super().__init__()
+        self.linear = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
+        if prior_prob is not None:
+            self.linear.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
+
+    def forward(self, src):
+        #src = src[:, -1, :]
+        src = src.sum(dim=1)
+        return self.linear(src)
+
+
+class NicuModel(nn.Module):
+    def __init__(self, device='cpu', prior_prob=None):
+        super().__init__()
+        self.embedding = NicuEmbeddings(device=device)
+        self.encoder = nn.ModuleList([NicuEncoder() for _ in range(model_config['num_stacks'])])
+        #self.encoder1 = NicuEncoder()
+        #self.encoder2 = NicuEncoder()
+        self.classifier = NicuClassifier(prior_prob)
+    
+    def forward(self, x):
+        x = self.embedding(x)
+        for encoder_module in self.encoder:
+            x = encoder_module(x)
+        return self.classifier(x)    
+        #return self.classifier(self.encoder2(self.encoder1(self.embedding(x, x_len))))
+
+'''   
+    def forward(self, x, x_len):
+        x = self.embedding(x, x_len)
+        for encoder_module in self.encoder:
+            x = encoder_module(x)
+        return self.classifier(x)    
+        #return self.classifier(self.encoder2(self.encoder1(self.embedding(x, x_len))))
+'''
 class FocalLoss(nn.Module):
     def __init__(self, gamma=2.0, alpha=0.25):
         super(FocalLoss, self).__init__()
@@ -93,68 +240,3 @@ class FocalLoss(nn.Module):
         pt = torch.exp(-BCE_loss)  # prevents nans when probability 0
         focal_loss = self.alpha * (1 - pt) ** self.gamma * BCE_loss
         return focal_loss.mean()
-
-
-class NicuModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.embedding = NicuEmbeddings()
-        self.encoder1 = NicuEncoder()
-        self.encoder2 = NicuEncoder()
-        self.classifier = NicuClassifier()
-
-    def forward(self, time_from_birth, measurement, condition):
-        return self.classifier(self.encoder2(self.encoder1(self.embedding(time_from_birth, measurement, condition))))
-
-
-class NicuEmbeddings(nn.Module):
-    """Construct the embeddings from measurement, position and diagnosis embeddings."""
-
-    def __init__(self):
-        super().__init__()
-        self.t_embedding = nn.Linear(1, model_config['embedd_dim'])
-        self.m_embedding = nn.Linear(model_config['measure_dim'], model_config['embedd_dim'])
-        self.c_embedding = nn.Linear(model_config['con_dim'], model_config['embedd_dim'])
-
-        self.layernorm = nn.LayerNorm(model_config['embedd_dim'])
-        self.dropout = nn.Dropout(model_config['drop_prob'])
-
-    def forward(self, time_from_birth, measurement, condition):
-        embeddings = self.t_embedding(time_from_birth) + self.m_embedding(measurement) + self.c_embedding(condition)
-        embeddings = self.layernorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
-
-
-class NicuEncoder(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.self_attn = nn.MultiheadAttention(model_config['embedd_dim'],
-                                               model_config['num_heads'], dropout=model_config['drop_prob'])
-        # Implementation of Feedforward model
-        self.linear1 = nn.Linear(model_config['embedd_dim'], model_config['ffn_dim'])
-        self.linear2 = nn.Linear(model_config['ffn_dim'], model_config['embedd_dim'])
-
-        self.layernorm1 = nn.LayerNorm(model_config['embedd_dim'])
-        self.layernorm2 = nn.LayerNorm(model_config['embedd_dim'])
-        self.dropout1 = nn.Dropout(model_config['drop_prob'])
-        self.dropout2 = nn.Dropout(model_config['drop_prob'])
-
-    def forward(self, src):
-        src2 = self.self_attn(src, src, src)[0]
-        src = src + self.dropout1(src2)
-        src = self.layernorm1(src)
-        src2 = self.linear2(F.relu(self.linear1(src)))
-        src = src + self.dropout2(src2)
-        src = self.layernorm2(src)
-        return src
-
-
-class NicuClassifier(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.linear = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
-
-    def forward(self, src):
-        src = src.sum(dim=1)
-        return self.linear(src)
