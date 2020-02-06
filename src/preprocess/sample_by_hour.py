@@ -2,9 +2,50 @@ from datetime import timedelta
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
-from src.constants import MEASUREMENT_SOURCE_VALUE_USES, CONDITION_SOURCE_VALUE_USES, measurement_csv, person_csv, \
+from src.constants import MEASUREMENT_SAMPLED_USES, measurement_csv, person_csv, \
     condition_csv
 from src.utils import get_person_ids, datetime_to_string, string_to_datetime
+from src.preprocess.utils import _sampling, _normalize, _fillna
+
+
+def convert_features_to_dataset(cfg, mode):
+    p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
+    person_ids = get_person_ids(p_df)
+
+    hourly_sampled_dfs = {}
+
+    for person_id in person_ids:
+        df = pd.read_pickle(cfg.get_hourly_divided_measure_file_path(mode, person_id))
+        columns = df.columns.tolist()
+
+        nan_value = float("NaN")
+        for required_column in MEASUREMENT_SAMPLED_USES:
+            if required_column not in columns:
+                df[required_column] = nan_value
+
+        new_df = pd.DataFrame()
+        new_df["MEASUREMENT_DATETIME"] = df["MEASUREMENT_DATETIME"]
+        df.drop(columns=["MEASUREMENT_DATETIME"], axis=1, inplace=True)
+
+        df = _sampling(df, 'front')
+        df = _normalize(df)
+        df = _fillna(df)
+
+        new_df["PR"] = df[["HR", "Pulse"]].mean(axis=1)
+        new_df["BT"] = df["Temp"]
+        new_df["IDBP"] = df[["ARTd", "ABPd"]].mean(axis=1)
+        new_df["IMBP"] = df["ABPm"]
+        new_df["ISBP"] = df[["ARTs", "ABPs"]].mean(axis=1)
+        new_df["DBP"] = df[["NBPd", "NBP-D"]].mean(axis=1)
+        new_df["MBP"] = df[["NBPm", "NBP-M"]].mean(axis=1)
+        new_df["SBP"] = df[["NBPs", "NBP-S"]].mean(axis=1)
+        new_df["RR"] = df[["RR", "Resp"]].mean(axis=1)
+        new_df["SPO2"] = df[["SpO2T", "SpO2-%", "SpO2"]].mean(axis=1)
+        new_df["SPO2R"] = df["SPO2-R"]
+
+        hourly_sampled_dfs[person_id] = new_df
+
+    return hourly_sampled_dfs
 
 
 def measurement_preprocess(cfg, mode):

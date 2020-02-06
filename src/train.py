@@ -9,14 +9,13 @@ from datetime import date
 from tqdm import tqdm, trange
 
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, hyperparams, model_config
+from .constants import outcome_cohort_csv, hyperparams, model_config
 from .datasets.measurement import MeasurementDataset
+from .datasets.hourly_sampled import HourlySampledDataset
 
-from .preprocess.measure_divide import measurement_preprocess
 from .models import NicuModel, FocalLoss, ConvLstmLinear
 from .optimization import BertAdam
-# from .preprocess.measure_divide import measurement_preprocess
-from .preprocess.sample_by_hour import measurement_preprocess
+from .preprocess.sample_by_hour import convert_features_to_dataset
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -38,10 +37,10 @@ def train(cfg):
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
     transforms = None
-    trainset = MeasurementDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                  transform=transforms, reverse_pad=reverse_pad)
-    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
-    trainset.fill_people_dfs_and_births(dfs, births)
+    trainset = HourlySampledDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                                    transform=transforms, reverse_pad=reverse_pad)
+    dfs = convert_features_to_dataset(cfg, mode)
+    trainset.fill_dfs(dfs)
     '''
     target = trainset.o_df['LABEL']
     class_count = np.unique(target, return_counts=True)[1]
@@ -100,12 +99,5 @@ def train(cfg):
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
-    measurement_preprocess(cfg, 'train')
-    measurement_preprocess(cfg, 'test')
-    '''
-    measurement_preprocess(cfg, 'train', 'front')
-    measurement_preprocess(cfg, 'train', 'average')
-    measurement_preprocess(cfg, 'test', 'front')
-    measurement_preprocess(cfg, 'test', 'average')
-    '''
-    # train(cfg)
+
+    train(cfg)
