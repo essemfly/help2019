@@ -15,7 +15,7 @@ from .datasets.hourly_sampled import HourlySampledDataset
 
 from .models import NicuModel, FocalLoss, ConvLstmLinear
 from .optimization import BertAdam
-from .preprocess.sample_by_hour import convert_features_to_dataset
+from .preprocess.sample_by_hour import measure11_dfs, convert_features_to_dataset
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -39,7 +39,7 @@ def train(cfg):
     transforms = None
     trainset = HourlySampledDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
                                     transform=transforms, reverse_pad=reverse_pad)
-    dfs = convert_features_to_dataset(cfg, mode)
+    dfs = measure11_dfs(cfg, mode)
     trainset.fill_dfs(dfs)
     '''
     target = trainset.o_df['LABEL']

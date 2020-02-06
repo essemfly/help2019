@@ -8,13 +8,22 @@ from src.utils import get_person_ids, datetime_to_string, string_to_datetime
 from src.preprocess.utils import _sampling, _normalize, _fillna
 
 
-def convert_features_to_dataset(cfg, mode):
+def measure11_dfs(cfg, mode):
     p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
     person_ids = get_person_ids(p_df)
-
     hourly_sampled_dfs = {}
 
     for person_id in person_ids:
+        hourly_sampled_dfs[person_id] = pd.read_pickle(cfg.get_hourly_divided_11measures_df_path(mode, person_id))
+    return hourly_sampled_dfs
+
+
+def convert_features_to_dataset(cfg, mode):
+    print("11 Measures are Saved!")
+    p_df = pd.read_csv(cfg.get_csv_path(person_csv, mode), encoding='CP949')
+    person_ids = get_person_ids(p_df)
+
+    for _, person_id in enumerate(tqdm(person_ids, desc='People iteration')):
         df = pd.read_pickle(cfg.get_hourly_divided_measure_file_path(mode, person_id))
         columns = df.columns.tolist()
 
@@ -43,9 +52,7 @@ def convert_features_to_dataset(cfg, mode):
         new_df["SPO2"] = df[["SpO2T", "SpO2-%", "SpO2"]].mean(axis=1)
         new_df["SPO2R"] = df["SPO2-R"]
 
-        hourly_sampled_dfs[person_id] = new_df
-
-    return hourly_sampled_dfs
+        new_df.to_pickle(cfg.get_hourly_divided_11measures_df_path(mode, person_id))
 
 
 def measurement_preprocess(cfg, mode):

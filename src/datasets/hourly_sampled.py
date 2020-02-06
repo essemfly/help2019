@@ -13,7 +13,6 @@ class HourlySampledDataset(Dataset):
         self.transform = transform
         self.max_seq_length = max_seq_length
         self.dfs = {}
-        self.births = {}
         self.reverse_pad = reverse_pad
 
     def fill_dfs(self, dfs):
