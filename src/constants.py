@@ -47,23 +47,23 @@ MEASUREMENT_FEATURE_USES = ["PR", "BT", "IDBP", "IMBP", "ISBP", "DBP", "MBP", "S
 model_config = {
     'measure_dim': len(MEASUREMENT_FEATURE_USES),
     'con_dim': len(CONDITION_SOURCE_VALUE_USES),
-    'embedd_dim': 64,
+    'embedd_dim': 16,
     'drop_prob': 0.1,
     'num_heads': 4,
-    'ffn_dim': 256,
+    'ffn_dim': 64,
     'num_labels': 1,
     'num_layers': 2,
-    'num_stacks': 2,
+    'num_stacks': 1,
     'hidden_dim': 64
 }
 
 hyperparams = {
-    'batch_size': 256,
+    'batch_size': 2048,
     'lr': 0.0001,
     'weight_decay': 0.01,
     'sampling_strategy': 'front',
-    'max_seq_len': 1024,
-    'epochs': 20,
+    'max_seq_len': 256,
+    'epochs': 5,
     'gamma': 2.0,
     'alpha': 0.25,
     'prior_prob': 0.059,
