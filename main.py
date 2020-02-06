@@ -15,10 +15,13 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train(args.env)
     else:
-        pass
         inference(
             args.env,
+<<<<<<< HEAD
             ckpt_name=f'convconv_epoch{hyperparams["epochs"]}',
+=======
+            ckpt_name='200207_epoch5_convlstm',
+>>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
             threshold_strategy="exact",  ## "percentile" or "exact"
             threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
             threshold_exact=0.5,  ## for threshold_strategy == "exact"

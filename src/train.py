@@ -15,7 +15,7 @@ from .datasets.hourly_sampled import HourlySampledDataset
 
 from .models import NicuModel, FocalLoss, ConvLstmLinear, ConvConvConv
 from .optimization import BertAdam
-from .preprocess.sample_by_hour import measure11_dfs, convert_features_to_dataset, measurement_preprocess
+from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
 
@@ -39,22 +39,23 @@ def train(cfg):
     transforms = None
     trainset = HourlySampledDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
                                     transform=transforms, reverse_pad=reverse_pad)
-    dfs = measure11_dfs(cfg, mode)
+    dfs = measure72_dfs(cfg, mode)
     trainset.fill_dfs(dfs)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False, pin_memory=True)
     del dfs
     full_x = []
     full_x_len = []
     full_labels = []
-    for i, (x, x_len, labels) in enumerate(tqdm(trainloader, desc="Preparing")):   
+    for i, (x, x_len, labels) in enumerate(tqdm(trainloader, desc="Preparing")):
         full_x.append(x)
         full_x_len.append(x_len)
         full_labels.append(labels)
-        
+
     full_x = torch.cat(full_x, dim=0)
     full_x_len = torch.cat(full_x_len, dim=0)
     full_labels = torch.cat(full_labels, dim=0)
 
+<<<<<<< HEAD
     target = trainset.o_df['LABEL']
     class_count = np.unique(target, return_counts=True)[1]
     weight = 1. / class_count
@@ -69,6 +70,14 @@ def train(cfg):
     model = ConvConvConv(prior_prob=hyperparams['prior_prob'])            
     #model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
     #model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
+=======
+    trainset = TensorDataset(full_x, full_x_len, full_labels)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False,
+                             pin_memory=True)
+
+    # model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
+    model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
+>>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
     print(hyperparams)
     print(model_config)
     print(model)
@@ -78,7 +87,7 @@ def train(cfg):
     model.train()
     criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
 
-    #optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     num_steps = len(trainloader) * epochs
     optimizer = BertAdam(model.parameters(), lr=lr, warmup=hyperparams['warmup_proportion'], t_total=num_steps)
@@ -108,16 +117,16 @@ def train(cfg):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
+<<<<<<< HEAD
     torch.save(model_to_save, f'{cfg.VOLUME_DIR}/convconv_epoch{hyperparams["epochs"]}.ckpt')
+=======
+        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200207_epoch{epoch + 1}_convlstm.ckpt')
+>>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
 
 
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
-    '''
     measurement_preprocess(cfg, 'train')
-    measurement_preprocess(cfg, 'test')
     convert_features_to_dataset(cfg, 'train')
-    convert_features_to_dataset(cfg, 'test')
-    '''
     train(cfg)
