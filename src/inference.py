@@ -29,8 +29,8 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     n_gpu = torch.cuda.device_count()
     num_workers = 8 * n_gpu
 
-    model = NicuModel(device=device)
-    #model = ConvLstmLinear(device=device)
+    #model = NicuModel(device=device)
+    model = ConvLstmLinear(device=device)
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:

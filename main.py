@@ -17,7 +17,7 @@ if __name__ == "__main__":
         pass
         inference(
             args.env,
-            ckpt_name='200206_epoch20_nicumodel',
+            ckpt_name='200206_epoch20_convlstm',
             threshold_strategy="exact",  ## "percentile" or "exact"
             threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
             threshold_exact=0.5,  ## for threshold_strategy == "exact"

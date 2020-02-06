@@ -69,8 +69,8 @@ def train(cfg):
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False,
                              pin_memory=True)
                 
-    model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
-    #model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
+    #model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
+    model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
     print(hyperparams)
     print(model_config)
     print(model)
@@ -110,7 +110,7 @@ def train(cfg):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
-        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200206_epoch{epoch + 1}_nicumodel.ckpt')
+        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200206_epoch{epoch + 1}_convlstm.ckpt')
 
 
 def main_train(env):

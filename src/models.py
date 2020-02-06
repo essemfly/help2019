@@ -14,9 +14,10 @@ class ConvLstmLinear(nn.Module):
         drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
         self.lstm = nn.LSTM(input_size=model_config['embedd_dim'], hidden_size=model_config['hidden_dim'], 
                             batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob, bidirectional=True)
-        self.linear = nn.Linear(model_config['hidden_dim'] * 2, model_config['num_labels'])
+        self.linear1 = nn.Linear(model_config['hidden_dim'] * 2, model_config['ffn_dim'])
+        self.linear2 = nn.Linear(model_config['ffn_dim'], model_config['num_labels'])
         if prior_prob is not None:
-            self.linear.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
+            self.linear2.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
             
     def _init_hidden(self, batch_size):
         hidden = torch.zeros(model_config['num_layers'] * 2, batch_size, model_config['hidden_dim'])
@@ -45,7 +46,7 @@ class ConvLstmLinear(nn.Module):
         # undo the packing operation
         #x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])       
         
-        return self.linear(torch.cat((hidden[-1],hidden[-2]),dim=1))
+        return self.linear2(F.relu(self.linear1(torch.cat((hidden[-1],hidden[-2]),dim=1))))
 
 '''
 =======
