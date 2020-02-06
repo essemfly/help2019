@@ -42,13 +42,15 @@ MEASUREMENT_SAMPLED_USES = [
     "Resp", "SpO2T", "SpO2-%", "SpO2", "SPO2-R", "Temp",
 ]
 
+MEASUREMENT_FEATURE_USES = ["PR", "BT", "IDBP", "IMBP", "ISBP", "DBP", "MBP", "SBP", "RR", "SPO2", "SPO2R"]
+
 model_config = {
-    'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES),
+    'measure_dim': len(MEASUREMENT_FEATURE_USES),
     'con_dim': len(CONDITION_SOURCE_VALUE_USES),
-    'embedd_dim': 16,
+    'embedd_dim': 64,
     'drop_prob': 0.1,
     'num_heads': 4,
-    'ffn_dim': 64,
+    'ffn_dim': 256,
     'num_labels': 1,
     'num_layers': 2,
     'num_stacks': 2,
@@ -57,11 +59,11 @@ model_config = {
 
 hyperparams = {
     'batch_size': 256,
-    'lr': 0.001,
+    'lr': 0.0001,
     'weight_decay': 0.01,
     'sampling_strategy': 'front',
     'max_seq_len': 1024,
-    'epochs': 5,
+    'epochs': 20,
     'gamma': 2.0,
     'alpha': 0.25,
     'prior_prob': 0.059,

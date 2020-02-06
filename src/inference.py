@@ -7,10 +7,11 @@ from tqdm import tqdm
 from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
-from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams
+from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams, model_config
 from .models import NicuModel, ConvLstmLinear
 from .datasets.measurement import MeasurementDataset
-
+from .datasets.hourly_sampled import HourlySampledDataset
+from .preprocess.sample_by_hour import measure11_dfs, convert_features_to_dataset, measurement_preprocess
 
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
     mode = 'test'
@@ -35,17 +36,20 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     if n_gpu > 1:
         model = nn.DataParallel(model)
     model.eval()
-
+    
     prob_preds = []
-
+    
     transforms = None
-    testset = MeasurementDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                 transform=transforms, reverse_pad=reverse_pad)
-    dfs, births = cfg.load_person_dfs_births(mode, sampling_strategy)
-    testset.fill_people_dfs_and_births(dfs, births)
-
+    testset = HourlySampledDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
+                                    transform=transforms, reverse_pad=reverse_pad)
+    dfs = measure11_dfs(cfg, mode)
+    testset.fill_dfs(dfs)
+    
     testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False, pin_memory=True)
-
+    print(hyperparams)
+    print(model_config)
+    print(model)
+    
     for x, x_len, _ in tqdm(testloader, desc="Evaluating"):
         x = x.to(device)
         x_len = x_len.to(device)
