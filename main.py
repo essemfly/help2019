@@ -14,10 +14,9 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train(args.env)
     else:
-        pass
         inference(
             args.env,
-            ckpt_name='200206_epoch20_convlstm',
+            ckpt_name='200207_epoch5_convlstm',
             threshold_strategy="exact",  ## "percentile" or "exact"
             threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
             threshold_exact=0.5,  ## for threshold_strategy == "exact"

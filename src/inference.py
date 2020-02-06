@@ -11,7 +11,8 @@ from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output
 from .models import NicuModel, ConvLstmLinear
 from .datasets.measurement import MeasurementDataset
 from .datasets.hourly_sampled import HourlySampledDataset
-from .preprocess.sample_by_hour import measure11_dfs, convert_features_to_dataset, measurement_preprocess
+from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
+
 
 def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact):
     mode = 'test'
@@ -24,32 +25,33 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     max_seq_length = hyperparams['max_seq_len']
     epochs = hyperparams['epochs']
     reverse_pad = True
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 8 * n_gpu
 
-    #model = NicuModel(device=device)
+    # model = NicuModel(device=device)
     model = ConvLstmLinear(device=device)
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:
         model = nn.DataParallel(model)
     model.eval()
-    
+
     prob_preds = []
-    
+
     transforms = None
     testset = HourlySampledDataset(cfg.get_csv_path(outcome_cohort_csv, mode), max_seq_length=max_seq_length,
-                                    transform=transforms, reverse_pad=reverse_pad)
-    dfs = measure11_dfs(cfg, mode)
+                                   transform=transforms, reverse_pad=reverse_pad)
+    dfs = measure72_dfs(cfg, mode)
     testset.fill_dfs(dfs)
-    
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False, pin_memory=True)
+
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False,
+                            pin_memory=True)
     print(hyperparams)
     print(model_config)
     print(model)
-    
+
     for x, x_len, _ in tqdm(testloader, desc="Evaluating"):
         x = x.to(device)
         x_len = x_len.to(device)
@@ -128,6 +130,8 @@ def inference_summary(o_df, threshold_strategy, threshold, threshold_percentile)
 
 def main_inference(env, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact, if_use_log, logfile):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
+    measurement_preprocess(cfg, 'test')
+    convert_features_to_dataset(cfg, 'test')
     print("Num threads : ", torch.get_num_threads())
     if (if_use_log):
         print("Inference using previous probability log : ", logfile)
