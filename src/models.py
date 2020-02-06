@@ -5,7 +5,26 @@ from torch.autograd import Variable
 import numpy as np
 from .constants import model_config, hyperparams
 from math import log
-
+class ConvConvConv(nn.Module):
+    def __init__(self, prior_prob=None):
+        super(ConvConvConv, self).__init__()
+        self.embedding = nn.Sequential(nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1), nn.BatchNorm1d(model_config['embedd_dim']))
+        self.block1 = nn.Sequential(nn.Conv1d(model_config['embedd_dim'], 2*model_config['embedd_dim'], kernel_size=1),nn.BatchNorm1d(2*model_config['embedd_dim']), nn.ReLU())
+        self.block2 = nn.Sequential(nn.Conv1d(2*model_config['embedd_dim'], model_config['embedd_dim'], kernel_size=1), nn.BatchNorm1d(model_config['embedd_dim']), nn.ReLU())
+        self.pooling = nn.AvgPool1d(hyperparams['max_seq_len'])
+        self.classifier = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
+        if prior_prob is not None:
+            self.classifier.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
+        
+    def forward(self, x):
+        x = x.transpose(1, 2)
+        x = self.embedding(x)
+        output = self.block1(x)
+        output = self.block2(output) + x
+        output = self.pooling(output)
+        
+        return self.classifier(output.squeeze(-1))
+        
 class ConvLstmLinear(nn.Module):
     def __init__(self, device='cpu', prior_prob=None):
         super().__init__()

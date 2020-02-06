@@ -8,7 +8,7 @@ from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams, model_config
-from .models import NicuModel, ConvLstmLinear
+from .models import NicuModel, ConvLstmLinear, ConvConvConv
 from .datasets.measurement import MeasurementDataset
 from .datasets.hourly_sampled import HourlySampledDataset
 from .preprocess.sample_by_hour import measure11_dfs, convert_features_to_dataset, measurement_preprocess
@@ -28,9 +28,10 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 8 * n_gpu
-
+    
+    model = ConvConvConv()
     #model = NicuModel(device=device)
-    model = ConvLstmLinear(device=device)
+    #model = ConvLstmLinear(device=device)
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:

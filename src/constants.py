@@ -54,18 +54,18 @@ model_config = {
     'num_labels': 1,
     'num_layers': 2,
     'num_stacks': 1,
-    'hidden_dim': 64
+    'hidden_dim': 128
 }
 
 hyperparams = {
-    'batch_size': 2048,
+    'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
     'sampling_strategy': 'front',
     'max_seq_len': 256,
-    'epochs': 5,
-    'gamma': 2.0,
-    'alpha': 0.25,
-    'prior_prob': 0.059,
+    'epochs': 15,
+    'gamma': 0.0,
+    'alpha': 1.0,
+    'prior_prob': None,
     'warmup_proportion': 0.1
 }
