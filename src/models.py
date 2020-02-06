@@ -197,8 +197,8 @@ class NicuClassifier(nn.Module):
             self.linear.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
 
     def forward(self, src):
-        #src = src[:, -1, :]
-        src = src.sum(dim=1)
+        src = src[:, -1, :]
+        #src = src.sum(dim=1)
         return self.linear(src)
 
 
