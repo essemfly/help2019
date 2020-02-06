@@ -5,6 +5,7 @@ from torch.autograd import Variable
 import numpy as np
 from .constants import model_config, hyperparams
 from math import log
+
 class ConvConvConv(nn.Module):
     def __init__(self, prior_prob=None):
         super(ConvConvConv, self).__init__()
@@ -12,7 +13,8 @@ class ConvConvConv(nn.Module):
         self.block1 = nn.Sequential(nn.Conv1d(model_config['embedd_dim'], 2*model_config['embedd_dim'], kernel_size=1),nn.BatchNorm1d(2*model_config['embedd_dim']), nn.ReLU())
         self.block2 = nn.Sequential(nn.Conv1d(2*model_config['embedd_dim'], model_config['embedd_dim'], kernel_size=1), nn.BatchNorm1d(model_config['embedd_dim']), nn.ReLU())
         self.pooling = nn.AvgPool1d(hyperparams['max_seq_len'])
-        self.classifier = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
+        self.linear1 = nn.Sequential(nn.Linear(model_config['embedd_dim'], model_config['ffn_dim']), nn.BatchNorm1d(model_config['ffn_dim']), nn.ReLU())
+        self.linear2 = nn.Linear(model_config['ffn_dim'], model_config['num_labels'])
         if prior_prob is not None:
             self.classifier.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
         
@@ -22,8 +24,8 @@ class ConvConvConv(nn.Module):
         output = self.block1(x)
         output = self.block2(output) + x
         output = self.pooling(output)
-        
-        return self.classifier(output.squeeze(-1))
+        output = self.linear1(output.squeeze(-1))
+        return self.linear2(output)
         
 class ConvLstmLinear(nn.Module):
     def __init__(self, device='cpu', prior_prob=None):
@@ -61,11 +63,11 @@ class ConvLstmLinear(nn.Module):
         # now run through LSTM
         if self.training:
             self.lstm.flatten_parameters()
-        _, (hidden, cell) = self.lstm(x, (hidden, cell))
+        x, (hidden, cell) = self.lstm(x, (hidden, cell))
         # undo the packing operation
         #x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])       
-        
-        return self.linear2(F.relu(self.linear1(torch.cat((hidden[-1],hidden[-2]),dim=1))))
+        return self.linear2(F.relu(self.linear1(x[:, -1, :])))
+        #return self.linear2(F.relu(self.linear1(torch.cat((hidden[-1],hidden[-2]),dim=1))))
 
 '''
 =======
@@ -211,14 +213,15 @@ class NicuEncoder(nn.Module):
 class NicuClassifier(nn.Module):
     def __init__(self, prior_prob=None):
         super().__init__()
-        self.linear = nn.Linear(model_config['embedd_dim'], model_config['num_labels'])
+        self.linear = nn.Linear(model_config['embedd_dim'], int(model_config['embedd_dim'] / 4))
         if prior_prob is not None:
             self.linear.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
-
+        self.last = nn.Linear(int(model_config['embedd_dim'] / 4), model_config['num_labels'])
     def forward(self, src):
-        src = src[:, -1, :]
+        #src = src[:, -1, :]
         #src = src.sum(dim=1)
-        return self.linear(src)
+        src = F.relu(self.linear(src.mean(dim=1)))
+        return self.last(src) 
 
 
 class NicuModel(nn.Module):

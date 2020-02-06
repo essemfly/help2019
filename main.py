@@ -3,7 +3,7 @@ import argparse
 # TODO: Refactoring needed
 from src.train import main_train as train
 from src.inference import main_inference as inference
-from src.constants import hyperparams
+from src.constants import hyperparams, model_config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Training start')
@@ -17,11 +17,7 @@ if __name__ == "__main__":
     else:
         inference(
             args.env,
-<<<<<<< HEAD
-            ckpt_name=f'convconv_epoch{hyperparams["epochs"]}',
-=======
-            ckpt_name='200207_epoch5_convlstm',
->>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
+            ckpt_name=f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}',
             threshold_strategy="exact",  ## "percentile" or "exact"
             threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
             threshold_exact=0.5,  ## for threshold_strategy == "exact"

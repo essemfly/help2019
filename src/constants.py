@@ -44,28 +44,32 @@ MEASUREMENT_SAMPLED_USES = [
 
 MEASUREMENT_FEATURE_USES = ["PR", "BT", "IDBP", "IMBP", "ISBP", "DBP", "MBP", "SBP", "RR", "SPO2", "SPO2R"]
 
+# Choose your model name among 'lstm', 'conv', and 'attn' (Do not change the other configurations.
 model_config = {
-    'measure_dim': len(MEASUREMENT_FEATURE_USES),
+    'model_name': 'attn',
+    'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES),
     'con_dim': len(CONDITION_SOURCE_VALUE_USES),
-    'embedd_dim': 16,
+    'embedd_dim': 64,
     'drop_prob': 0.1,
     'num_heads': 4,
-    'ffn_dim': 64,
+    'ffn_dim': 128,
     'num_labels': 1,
     'num_layers': 2,
-    'num_stacks': 1,
+    'num_stacks': 2,
     'hidden_dim': 128
 }
-
+# You modify only 'epochs' and 'finetuning_epochs'
 hyperparams = {
+    'epochs': 5,
     'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
     'sampling_strategy': 'front',
     'max_seq_len': 256,
-    'epochs': 15,
-    'gamma': 0.0,
-    'alpha': 1.0,
+    'gamma': 2.0,
+    'alpha': 0.25,
     'prior_prob': None,
-    'warmup_proportion': 0.1
+    'warmup_proportion': 0.1,
+    'finetuning_epochs': 0
 }
+# If finetuning_epochs is positive, then train.py starts fine-tuning

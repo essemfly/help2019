@@ -24,7 +24,7 @@ def measure72_dfs(cfg, mode):
     hourly_sampled_dfs = {}
 
     for person_id in person_ids:
-        hourly_sampled_dfs[person_id] = pd.read_pickle(cfg.get_hourly_divided_11measures_df_path(mode, person_id))
+        hourly_sampled_dfs[person_id] = pd.read_pickle(cfg.get_hourly_divided_72measures_df_path(mode, person_id))
     return hourly_sampled_dfs
 
 

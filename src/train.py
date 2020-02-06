@@ -33,6 +33,7 @@ def train(cfg):
     num_workers = 8 * n_gpu
     epochs = hyperparams['epochs']
     reverse_pad = True
+    ft_epochs = hyperparams['finetuning_epochs']
 
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
@@ -43,6 +44,7 @@ def train(cfg):
     trainset.fill_dfs(dfs)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False, pin_memory=True)
     del dfs
+    
     full_x = []
     full_x_len = []
     full_labels = []
@@ -54,30 +56,35 @@ def train(cfg):
     full_x = torch.cat(full_x, dim=0)
     full_x_len = torch.cat(full_x_len, dim=0)
     full_labels = torch.cat(full_labels, dim=0)
-
-<<<<<<< HEAD
-    target = trainset.o_df['LABEL']
-    class_count = np.unique(target, return_counts=True)[1]
-    weight = 1. / class_count
-    samples_weight = weight[target]
-    samples_weight = torch.from_numpy(samples_weight)
-    sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
-    trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False, pin_memory=True)
-    
     trainset = TensorDataset(full_x, full_x_len, full_labels)
-    #trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
     
-    model = ConvConvConv(prior_prob=hyperparams['prior_prob'])            
-    #model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
-    #model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
-=======
-    trainset = TensorDataset(full_x, full_x_len, full_labels)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False,
-                             pin_memory=True)
-
-    # model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
-    model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
->>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
+    if model_config['model_name'] == 'conv':
+        model = ConvConvConv(prior_prob=hyperparams['prior_prob'])
+    elif model_config['model_name'] == 'lstm':
+        model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
+    elif model_config['model_name'] == 'attn':            
+        model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
+    else:
+        raise ValueError("Select the name of your model among lstm, conv, and attn!")
+    
+    if ft_epochs == 0:
+        target = full_labels
+        class_count = np.unique(target, return_counts=True)[1]
+        weight = 1. / class_count
+        samples_weight = weight[target]
+        samples_weight = torch.from_numpy(samples_weight)
+        sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
+        trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False, pin_memory=True)
+        criterion = FocalLoss(gamma=0.0, alpha=1.0)
+    else:    
+        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
+        model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
+        criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
+        lr = 0.2 * lr
+        weight_decay = 0.0
+        epochs = ft_epochs
+        
     print(hyperparams)
     print(model_config)
     print(model)
@@ -85,12 +92,10 @@ def train(cfg):
     if n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
-    criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
-
+    
     # optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-
     num_steps = len(trainloader) * epochs
-    optimizer = BertAdam(model.parameters(), lr=lr, warmup=hyperparams['warmup_proportion'], t_total=num_steps)
+    optimizer = BertAdam(model.parameters(), lr=lr, weight_decay=weight_decay, warmup=hyperparams['warmup_proportion'], t_total=num_steps)
 
     for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0
@@ -117,16 +122,13 @@ def train(cfg):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
-<<<<<<< HEAD
-    torch.save(model_to_save, f'{cfg.VOLUME_DIR}/convconv_epoch{hyperparams["epochs"]}.ckpt')
-=======
-        torch.save(model_to_save, f'{cfg.VOLUME_DIR}/200207_epoch{epoch + 1}_convlstm.ckpt')
->>>>>>> 864dcbcfa44e65113f3a702fd181cc7fd3cbac42
+    torch.save(model_to_save, f'{cfg.VOLUME_DIR}/{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}.ckpt')
+
 
 
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
-    measurement_preprocess(cfg, 'train')
-    convert_features_to_dataset(cfg, 'train')
+    #measurement_preprocess(cfg, 'train')
+    #convert_features_to_dataset(cfg, 'train')
     train(cfg)
