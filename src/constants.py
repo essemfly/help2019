@@ -60,14 +60,14 @@ model_config = {
 }
 # You modify only 'epochs' and 'finetuning_epochs'
 hyperparams = {
-    'epochs': 5,
+    'epochs': 4,
     'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
     'sampling_strategy': 'front',
     'max_seq_len': 256,
-    'gamma': 2.0,
-    'alpha': 0.25,
+    'gamma': 0,
+    'alpha': 1.0,
     'prior_prob': None,
     'warmup_proportion': 0.1,
     'finetuning_epochs': 0

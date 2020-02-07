@@ -41,12 +41,12 @@ class ConvLstmLinear(nn.Module):
             self.linear2.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
             
     def _init_hidden(self, batch_size):
-        hidden = torch.zeros(model_config['num_layers'] * 2, batch_size, model_config['hidden_dim'])
+        hidden = torch.randn(model_config['num_layers'] * 2, batch_size, model_config['hidden_dim'])
         hidden = hidden.to(self.device)
         return Variable(hidden)
     
     def _init_cell(self, batch_size):
-        cell = torch.zeros(model_config['num_layers']*2, batch_size, model_config['hidden_dim'])
+        cell = torch.randn(model_config['num_layers']*2, batch_size, model_config['hidden_dim'])
         cell = cell.to(self.device)
         return Variable(cell)
 
