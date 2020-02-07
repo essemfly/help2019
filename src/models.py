@@ -33,8 +33,10 @@ class ConvLstmLinear(nn.Module):
         self.m_embedding = nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1)
         self.device = device
         drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
-        drop_prob = 0.0 if hyperarams['mixout_epochs'] > 0
-        drop_prob = 0.0 if hyperarams['finetuning_epochs'] > 0
+        if hyperparams['mixout_epochs'] > 0:
+            drop_prob = 0.0
+        if hyperparams['finetuning_epochs'] > 0:
+            drop_prob = 0.0 
         self.lstm = nn.LSTM(input_size=model_config['embedd_dim'], hidden_size=model_config['hidden_dim'], 
                             batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob, bidirectional=True)
         self.linear1 = nn.Linear(model_config['hidden_dim'] * 2, model_config['ffn_dim'])
