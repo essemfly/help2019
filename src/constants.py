@@ -60,7 +60,7 @@ model_config = {
 }
 # You modify only 'epochs' and 'finetuning_epochs'
 hyperparams = {
-    'epochs': 5,
+    'epochs': 24,
     'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
