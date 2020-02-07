@@ -60,7 +60,7 @@ model_config = {
 }
 # You modify only 'epochs' and 'finetuning_epochs'
 hyperparams = {
-    'epochs': 24,
+    'epochs':5,
     'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
@@ -71,8 +71,8 @@ hyperparams = {
     'prior_prob': None,
     'warmup_proportion': 0.1,
     'finetuning_epochs': 0,
-    'finetuning_strategy': 'last',
+    'finetuning_strategy': None,
     'mixout_prob': 0.9,
-    'mixout_epochs' : 5
+    'mixout_epochs' : 3
 }
 # If finetuning_epochs is positive, then train.py starts fine-tuning

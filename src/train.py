@@ -15,7 +15,7 @@ from .datasets.hourly_sampled import HourlySampledDataset
 
 from .models import NicuModel, FocalLoss, ConvLstmLinear, ConvConvConv
 from .optimization import BertAdam
-from .mix_linear import MixLinear
+from .mix_linear import MixLinear, MixLSTM
 from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
@@ -68,7 +68,6 @@ def train(cfg):
         model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
     else:
         raise ValueError("Select the name of your model among lstm, conv, and attn!")
-    
     if ft_epochs == 0 and mix_epochs == 0:
         target = full_labels
         class_count = np.unique(target, return_counts=True)[1]
@@ -87,7 +86,6 @@ def train(cfg):
         weight_decay = 0.0
         for name, module in model.named_modules():
             if 'linear' in name:
-                print(name)
                 start_state_dict = module.state_dict()
                 bias = True if module.bias is not None else False           
                 new_module = MixLinear(module.in_features, module.out_features, bias, start=start_state_dict['weight'], neuron=True, mix_prob=hyperparams['mixout_prob'])
@@ -101,7 +99,24 @@ def train(cfg):
             for n, p in model.named_parameters():
                 if 'linear' not in n:
                     p.requires_grad_(False)
-        print(ckpt_name)                    
+        else:
+            for name, module in model.named_modules():
+                if 'lstm' in name:
+                    start_state_dict = module.state_dict()
+                    bias = True if module.bias is not None else False          
+                    new_module = MixLSTM(module.input_size, module.hidden_size, module.num_layers, bias, batch_first=True, 
+                    dropout=0.0, bidirectional=True, start=start_state_dict,
+                    neuron=True, noise_type="bernoulli", mix_prob=hyperparams['mixout_prob'])
+                    new_module.load_state_dict(start_state_dict)
+                    module = model
+                    module = getattr(module, 'lstm')
+                    setattr(model, 'lstm', new_module)
+                    
+            for n, p in model.named_parameters(): 
+                if 'embedding' in n:
+                    p.requires_grad_(False)
+                if 'norm' in n:
+                    p.requries_grad_(False)                                            
     else:    
         trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
