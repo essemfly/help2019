@@ -8,7 +8,7 @@ from datetime import datetime
 
 from .config import LocalConfig, ProdConfig
 from .constants import MEASUREMENT_SOURCE_VALUE_USES, outcome_cohort_csv, output_csv, hyperparams, model_config
-from .models import NicuModel, ConvLstmLinear, ConvConvConv
+from .models import NicuModel, ConvLstmLinear, ConvConvConv, ConvLstmNormLinear
 from .datasets.measurement import MeasurementDataset
 from .datasets.hourly_sampled import HourlySampledDataset
 from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
@@ -29,16 +29,18 @@ def inference(cfg, ckpt_name, threshold_strategy, threshold_percentile, threshol
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     num_workers = 8 * n_gpu
-    
+
     if model_config['model_name'] == 'conv':
         model = ConvConvConv(prior_prob=hyperparams['prior_prob'])
     elif model_config['model_name'] == 'lstm':
         model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
-    elif model_config['model_name'] == 'attn':            
+    elif model_config['model_name'] == 'attn':
         model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
+    elif model_config['model_name'] == 'lstm_norm':
+        model = ConvLstmNormLinear(device=device, prior_prob=hyperparams['prior_prob'])
     else:
         raise ValueError("Select the name of your model among lstm, conv, and attn!")
-        
+
     model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
     model.to(device)
     if n_gpu > 1:
@@ -137,8 +139,8 @@ def inference_summary(o_df, threshold_strategy, threshold, threshold_percentile)
 
 def main_inference(env, ckpt_name, threshold_strategy, threshold_percentile, threshold_exact, if_use_log, logfile):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
-    #measurement_preprocess(cfg, 'test')
-    #convert_features_to_dataset(cfg, 'test')
+    # measurement_preprocess(cfg, 'test')
+    # convert_features_to_dataset(cfg, 'test')
     print("Num threads : ", torch.get_num_threads())
     if (if_use_log):
         print("Inference using previous probability log : ", logfile)
