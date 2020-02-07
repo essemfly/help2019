@@ -46,7 +46,7 @@ MEASUREMENT_FEATURE_USES = ["PR", "BT", "IDBP", "IMBP", "ISBP", "DBP", "MBP", "S
 
 # Choose your model name among 'lstm', 'conv', and 'attn' (Do not change the other configurations.
 model_config = {
-    'model_name': 'lstm',
+    'model_name': 'lstm_norm',
     'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES),
     'con_dim': len(CONDITION_SOURCE_VALUE_USES),
     'embedd_dim': 64,
@@ -60,7 +60,7 @@ model_config = {
 }
 # You modify only 'epochs' and 'finetuning_epochs'
 hyperparams = {
-    'epochs': 24,
+    'epochs': 20,
     'batch_size': 1024,
     'lr': 0.0001,
     'weight_decay': 0.01,
@@ -73,6 +73,6 @@ hyperparams = {
     'finetuning_epochs': 0,
     'finetuning_strategy': 'last',
     'mixout_prob': 0.9,
-    'mixout_epochs' : 5
+    'mixout_epochs': 0
 }
 # If finetuning_epochs is positive, then train.py starts fine-tuning

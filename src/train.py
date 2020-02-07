@@ -13,7 +13,7 @@ from .constants import outcome_cohort_csv, hyperparams, model_config
 from .datasets.measurement import MeasurementDataset
 from .datasets.hourly_sampled import HourlySampledDataset
 
-from .models import NicuModel, FocalLoss, ConvLstmLinear, ConvConvConv
+from .models import NicuModel, FocalLoss, ConvLstmLinear, ConvConvConv, ConvLstmNormLinear
 from .optimization import BertAdam
 from .mix_linear import MixLinear
 from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
@@ -36,7 +36,7 @@ def train(cfg):
     reverse_pad = True
     ft_epochs = hyperparams['finetuning_epochs']
     mix_epochs = hyperparams['mixout_epochs']
-    
+
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
     transforms = None
@@ -44,9 +44,10 @@ def train(cfg):
                                     transform=transforms, reverse_pad=reverse_pad)
     dfs = measure72_dfs(cfg, mode)
     trainset.fill_dfs(dfs)
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False, pin_memory=True)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=False,
+                             pin_memory=True)
     del dfs
-    
+
     full_x = []
     full_x_len = []
     full_labels = []
@@ -59,16 +60,18 @@ def train(cfg):
     full_x_len = torch.cat(full_x_len, dim=0)
     full_labels = torch.cat(full_labels, dim=0)
     trainset = TensorDataset(full_x, full_x_len, full_labels)
-    
+
     if model_config['model_name'] == 'conv':
         model = ConvConvConv(prior_prob=hyperparams['prior_prob'])
     elif model_config['model_name'] == 'lstm':
         model = ConvLstmLinear(device=device, prior_prob=hyperparams['prior_prob'])
-    elif model_config['model_name'] == 'attn':            
+    elif model_config['model_name'] == 'attn':
         model = NicuModel(device=device, prior_prob=hyperparams['prior_prob'])
+    elif model_config['model_name'] == 'lstm_norm':
+        model = ConvLstmNormLinear(device=device, prior_prob=hyperparams['prior_prob'])
     else:
         raise ValueError("Select the name of your model among lstm, conv, and attn!")
-    
+
     if ft_epochs == 0 and mix_epochs == 0:
         target = full_labels
         class_count = np.unique(target, return_counts=True)[1]
@@ -76,10 +79,12 @@ def train(cfg):
         samples_weight = weight[target]
         samples_weight = torch.from_numpy(samples_weight)
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
-        trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False, pin_memory=True)
+        trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers,
+                                 drop_last=False, pin_memory=True)
         criterion = FocalLoss(gamma=0.0, alpha=1.0)
     elif mix_epochs != 0:
-        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
+                                 drop_last=False, pin_memory=True)
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{ft_epochs}'
         model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
         criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
@@ -89,8 +94,9 @@ def train(cfg):
             if 'linear' in name:
                 print(name)
                 start_state_dict = module.state_dict()
-                bias = True if module.bias is not None else False           
-                new_module = MixLinear(module.in_features, module.out_features, bias, start=start_state_dict['weight'], neuron=True, mix_prob=hyperparams['mixout_prob'])
+                bias = True if module.bias is not None else False
+                new_module = MixLinear(module.in_features, module.out_features, bias, start=start_state_dict['weight'],
+                                       neuron=True, mix_prob=hyperparams['mixout_prob'])
                 new_module.load_state_dict(start_state_dict)
                 module = model
                 for attr in name.split('.')[:-1]:
@@ -101,9 +107,10 @@ def train(cfg):
             for n, p in model.named_parameters():
                 if 'linear' not in n:
                     p.requires_grad_(False)
-        print(ckpt_name)                    
-    else:    
-        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+        print(ckpt_name)
+    else:
+        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers,
+                                 drop_last=False, pin_memory=True)
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
         model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
         criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
@@ -115,7 +122,7 @@ def train(cfg):
                 if 'linear' not in n:
                     p.requires_grad_(False)
         print(ckpt_name)
-        
+
     print(hyperparams)
     print(model_config)
     print(model)
@@ -123,10 +130,11 @@ def train(cfg):
     if n_gpu > 1:
         model = nn.DataParallel(model)
     model.train()
-    
+
     # optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     num_steps = len(trainloader) * epochs
-    optimizer = BertAdam(model.parameters(), lr=lr, weight_decay=weight_decay, warmup=hyperparams['warmup_proportion'], t_total=num_steps)
+    optimizer = BertAdam(model.parameters(), lr=lr, weight_decay=weight_decay, warmup=hyperparams['warmup_proportion'],
+                         t_total=num_steps)
 
     for epoch in trange(epochs, desc="Epoch"):
         running_loss = 0.0
@@ -157,13 +165,13 @@ def train(cfg):
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}'
     else:
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}_{hyperparams["mixout_epochs"]}'
-    
+
     torch.save(model_to_save, f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt')
 
 
 def main_train(env):
     cfg = LocalConfig if env == 'localhost' else ProdConfig
     print("Train function runs")
-    #measurement_preprocess(cfg, 'train')
-    #convert_features_to_dataset(cfg, 'train')
+    # measurement_preprocess(cfg, 'train')
+    # convert_features_to_dataset(cfg, 'train')
     train(cfg)
