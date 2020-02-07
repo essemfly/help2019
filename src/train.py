@@ -69,7 +69,7 @@ def train(cfg):
     else:
         raise ValueError("Select the name of your model among lstm, conv, and attn!")
     
-    if ft_epochs == 0:
+    if ft_epochs == 0 and mix_epochs == 0:
         target = full_labels
         class_count = np.unique(target, return_counts=True)[1]
         weight = 1. / class_count
@@ -78,19 +78,7 @@ def train(cfg):
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
         trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False, pin_memory=True)
         criterion = FocalLoss(gamma=0.0, alpha=1.0)
-    elif mix_epochs==0:    
-        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
-        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
-        model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
-        criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
-        lr = 0.2 * lr
-        weight_decay = 0.0
-        epochs = ft_epochs
-        if hyperparams['finetuning_strategy'] == 'last':
-            for n, p in model.named_parameters():
-                if 'linear' not in n:
-                    p.requires_grad_(False)
-    else:
+    elif mix_epochs != 0:
         trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{ft_epochs}'
         model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
@@ -112,7 +100,22 @@ def train(cfg):
         if hyperparams['finetuning_strategy'] == 'last':
             for n, p in model.named_parameters():
                 if 'linear' not in n:
-                    p.requires_grad_(False)                    
+                    p.requires_grad_(False)
+        print(ckpt_name)                    
+    else:    
+        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
+        model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
+        criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
+        lr = 0.2 * lr
+        weight_decay = 0.0
+        epochs = ft_epochs
+        if hyperparams['finetuning_strategy'] == 'last':
+            for n, p in model.named_parameters():
+                if 'linear' not in n:
+                    p.requires_grad_(False)
+        print(ckpt_name)
+        
     print(hyperparams)
     print(model_config)
     print(model)
