@@ -15,9 +15,13 @@ if __name__ == "__main__":
     if args.mode == 'train':
         train(args.env)
     else:
+        if hyperparams['mixout_epochs'] == 0:
+            ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}'
+        else:
+            ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}_{hyperparams["mixout_epochs"]}'
         inference(
             args.env,
-            ckpt_name=f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}',
+            ckpt_name=ckpt_name,
             threshold_strategy="exact",  ## "percentile" or "exact"
             threshold_percentile=100 - 0.59,  ## for threshold_strategy == "percentile"
             threshold_exact=0.5,  ## for threshold_strategy == "exact"

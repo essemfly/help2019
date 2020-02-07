@@ -15,6 +15,7 @@ from .datasets.hourly_sampled import HourlySampledDataset
 
 from .models import NicuModel, FocalLoss, ConvLstmLinear, ConvConvConv
 from .optimization import BertAdam
+from .mix_linear import MixLinear
 from .preprocess.sample_by_hour import measure72_dfs, convert_features_to_dataset, measurement_preprocess
 
 ID = os.environ.get('ID', date.today().strftime("%Y%m%d"))
@@ -34,7 +35,8 @@ def train(cfg):
     epochs = hyperparams['epochs']
     reverse_pad = True
     ft_epochs = hyperparams['finetuning_epochs']
-
+    mix_epochs = hyperparams['mixout_epochs']
+    
     writer = SummaryWriter(os.path.join(cfg.LOG_DIR, ID))
 
     transforms = None
@@ -76,7 +78,7 @@ def train(cfg):
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
         trainloader = DataLoader(trainset, batch_size=batch_size, sampler=sampler, num_workers=num_workers, drop_last=False, pin_memory=True)
         criterion = FocalLoss(gamma=0.0, alpha=1.0)
-    else:    
+    elif mix_epochs==0:    
         trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
         ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_0'
         model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
@@ -88,8 +90,29 @@ def train(cfg):
             for n, p in model.named_parameters():
                 if 'linear' not in n:
                     p.requires_grad_(False)
-                else:
-                    print(n)
+    else:
+        trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=False, pin_memory=True)
+        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{ft_epochs}'
+        model.load_state_dict(torch.load(f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt'))
+        criterion = FocalLoss(gamma=hyperparams['gamma'], alpha=hyperparams['alpha'])
+        lr = 0.2 * lr
+        weight_decay = 0.0
+        for name, module in model.named_modules():
+            if 'linear' in name:
+                print(name)
+                start_state_dict = module.state_dict()
+                bias = True if module.bias is not None else False           
+                new_module = MixLinear(module.in_features, module.out_features, bias, start=start_state_dict['weight'], neuron=True, mix_prob=hyperparams['mixout_prob'])
+                new_module.load_state_dict(start_state_dict)
+                module = model
+                for attr in name.split('.')[:-1]:
+                    module = getattr(module, attr)
+                setattr(module, name.split('.')[-1], new_module)
+        epochs = hyperparams['mixout_epochs']
+        if hyperparams['finetuning_strategy'] == 'last':
+            for n, p in model.named_parameters():
+                if 'linear' not in n:
+                    p.requires_grad_(False)                    
     print(hyperparams)
     print(model_config)
     print(model)
@@ -127,7 +150,12 @@ def train(cfg):
             running_loss += loss.item()
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
-    torch.save(model_to_save, f'{cfg.VOLUME_DIR}/{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}.ckpt')
+    if hyperparams['mixout_epochs'] == 0:
+        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}'
+    else:
+        ckpt_name = f'{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}_{hyperparams["mixout_epochs"]}'
+    
+    torch.save(model_to_save, f'{cfg.VOLUME_DIR}/{ckpt_name}.ckpt')
 
 
 def main_train(env):
