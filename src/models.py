@@ -26,15 +26,62 @@ class ConvConvConv(nn.Module):
         output = self.pooling(output)
         output = self.linear1(output.squeeze(-1))
         return self.linear2(output)
+
+class ConvLstmNormLinear(nn.Module):
+    def __init__(self, device='cpu', prior_prob=None):
+        super().__init__()
+        self.m_embedding = nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1)
+        self.device = device
+        drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
+        if hyperparams['mixout_epochs'] > 0 or hyperparams['finetuning_epochs'] > 0:
+            drop_prob = 0.0 
         
+        self.lstm = nn.LSTM(input_size=model_config['embedd_dim'], hidden_size=model_config['hidden_dim'], 
+                            batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob, bidirectional=True)
+        self.layernorm = nn.LayerNorm(model_config['hidden_dim'] * 2)
+        self.linear1 = nn.Linear(model_config['hidden_dim'] * 2, model_config['ffn_dim'])
+        self.linear2 = nn.Linear(model_config['ffn_dim'], model_config['num_labels'])
+        if prior_prob is not None:
+            self.linear2.bias.data.fill_(-log((1 - prior_prob) / prior_prob))
+            
+    def _init_hidden(self, batch_size):
+        hidden = torch.randn(model_config['num_layers'] * 2, batch_size, model_config['hidden_dim'])
+        hidden = hidden.to(self.device)
+        return Variable(hidden)
+    
+    def _init_cell(self, batch_size):
+        cell = torch.randn(model_config['num_layers']*2, batch_size, model_config['hidden_dim'])
+        cell = cell.to(self.device)
+        return Variable(cell)
+
+    def forward(self, x):
+        # Embedding our raw input
+        x = self.m_embedding(x.transpose(1, 2)).transpose(1, 2)
+        # reset the LSTM hidden state. Must be done before you run a new batch. Otherwise the LSTM will treat
+        # a new batch as a continuation of a sequence
+        hidden = self._init_hidden(x.size()[0])
+        cell = self._init_cell(x.size()[0])
+
+        # pack_padded_sequence so that padded items in the sequence won't be shown to the LSTM
+        # x = torch.nn.utils.rnn.pack_padded_sequence(x, x_len, batch_first=True, enforce_sorted=False)
+        # now run through LSTM
+        if self.training:
+            self.lstm.flatten_parameters()
+        x, (hidden, cell) = self.lstm(x, (hidden, cell))
+        # undo the packing operation
+        #x, x_len = torch.nn.utils.rnn.pad_packed_sequence(x, batch_first=True, total_length=hyperparams['max_seq_len'])       
+        return self.linear2(F.relu(self.linear1(self.layernorm(x[:, -1, :]))))
+        #return self.linear2(F.relu(self.linear1(torch.cat((hidden[-1],hidden[-2]),dim=1))))        
+
 class ConvLstmLinear(nn.Module):
     def __init__(self, device='cpu', prior_prob=None):
         super().__init__()
         self.m_embedding = nn.Conv1d(model_config['measure_dim'], model_config['embedd_dim'], kernel_size=1)
         self.device = device
         drop_prob = model_config['drop_prob'] if model_config['num_layers'] > 1 else 0.0
-        drop_prob = 0.0 if hyperarams['mixout_epochs'] > 0
-        drop_prob = 0.0 if hyperarams['finetuning_epochs'] > 0
+        if hyperparams['mixout_epochs'] > 0 or hyperparams['finetuning_epochs'] > 0:
+            drop_prob = 0.0 
+        
         self.lstm = nn.LSTM(input_size=model_config['embedd_dim'], hidden_size=model_config['hidden_dim'], 
                             batch_first=True, num_layers=model_config['num_layers'], dropout=drop_prob, bidirectional=True)
         self.linear1 = nn.Linear(model_config['hidden_dim'] * 2, model_config['ffn_dim'])
