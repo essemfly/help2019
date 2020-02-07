@@ -449,6 +449,7 @@ class MixLSTM(RNNBase):
 
         self.check_forward_args(input, hx, batch_sizes)
         self._flat_weights = [(lambda wn: mixarg(getattr(self, wn), self.start[wn], self.neuron, self.noise_type, self.mix_prob, self.training) if hasattr(self, wn) else None)(wn) for wn in self._flat_weights_names]
+        self.flatten_parameters()
         if batch_sizes is None:
             result = _VF.lstm(input, hx, self._flat_weights, self.bias, self.num_layers,
                               self.dropout, self.training, self.bidirectional, self.batch_first)
