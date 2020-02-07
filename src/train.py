@@ -84,7 +84,12 @@ def train(cfg):
         lr = 0.2 * lr
         weight_decay = 0.0
         epochs = ft_epochs
-        
+        if hyperparams['finetuning_strategy'] == 'last':
+            for n, p in model.named_parameters():
+                if 'linear' not in n:
+                    p.requires_grad_(False)
+                else:
+                    print(n)
     print(hyperparams)
     print(model_config)
     print(model)
@@ -123,7 +128,6 @@ def train(cfg):
         writer.add_scalar('Loss', running_loss / len(trainloader.dataset), epoch + 1)
         model_to_save = model.module.state_dict() if hasattr(model, 'module') else model.state_dict()
     torch.save(model_to_save, f'{cfg.VOLUME_DIR}/{model_config["model_name"]}_epoch{hyperparams["epochs"]}_{hyperparams["finetuning_epochs"]}.ckpt')
-
 
 
 def main_train(env):

@@ -46,7 +46,7 @@ MEASUREMENT_FEATURE_USES = ["PR", "BT", "IDBP", "IMBP", "ISBP", "DBP", "MBP", "S
 
 # Choose your model name among 'lstm', 'conv', and 'attn' (Do not change the other configurations.
 model_config = {
-    'model_name': 'attn',
+    'model_name': 'lstm',
     'measure_dim': len(MEASUREMENT_SOURCE_VALUE_USES),
     'con_dim': len(CONDITION_SOURCE_VALUE_USES),
     'embedd_dim': 64,
@@ -70,6 +70,7 @@ hyperparams = {
     'alpha': 1.0,
     'prior_prob': None,
     'warmup_proportion': 0.1,
-    'finetuning_epochs': 0
+    'finetuning_epochs': 1,
+    'finetuning_strategy': 'last'
 }
 # If finetuning_epochs is positive, then train.py starts fine-tuning
